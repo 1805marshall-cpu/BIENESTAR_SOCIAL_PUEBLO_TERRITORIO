@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recepción - Captura de Peticiones</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module" src="recepcion.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col font-sans">
+
+    <!-- Navbar top -->
+    <nav class="bg-emerald-800 text-white shadow-md px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex items-center space-x-3">
+            <a href="../index.html" class="text-emerald-200 hover:text-white transition-colors mr-2">
+                <i class="fa-solid fa-arrow-left text-lg"></i>
+            </a>
+            <i class="fa-solid fa-clipboard-list text-2xl"></i>
+            <div>
+                <h1 class="text-xl font-bold tracking-wide">Módulo de Captura - Recepción</h1>
+                <p id="labelDeptoActivo" class="text-xs text-emerald-200 font-semibold">Cargando departamento...</p>
+            </div>
+        </div>
+
+        <!-- Indicador de Usuario, Fecha y Cierre de Sesión -->
+        <div class="flex items-center space-x-4 text-sm">
+            <div class="bg-emerald-900 bg-opacity-60 px-3 py-1 rounded-xl text-xs text-emerald-200 font-medium">
+                Fecha: <span id="currentDate" class="font-bold text-white">--/--/----</span>
+            </div>
+            <div class="bg-emerald-900 bg-opacity-60 px-4 py-1.5 rounded-xl border border-emerald-700 flex items-center space-x-2">
+                <i class="fa-solid fa-user-shield text-emerald-300"></i>
+                <div>
+                    <span id="nombreOperador" class="block font-bold text-xs">Operador</span>
+                </div>
+            </div>
+            <button onclick="cerrarSesion()" class="bg-rose-700 hover:bg-rose-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-colors flex items-center shadow">
+                <i class="fa-solid fa-right-from-bracket mr-1.5"></i> Salir
+            </button>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 w-full flex-grow space-y-8">
+
+        <!-- Formulario Principal -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-gradient-to-r from-emerald-700 to-teal-700 px-6 py-4 text-white flex justify-between items-center">
+                <h2 class="text-lg font-bold flex items-center">
+                    <i class="fa-solid fa-pen-to-square mr-2"></i> Registrar Nueva Petición / Solicitud
+                </h2>
+                <span class="text-xs bg-emerald-900 bg-opacity-40 px-3 py-1 rounded-md">Paso 1 de 1 (Estatus Inicial: PENDIENTE)</span>
+            </div>
+
+            <form id="formCaptura" class="p-6 space-y-6">
+                
+                <!-- FIELDSET 1: Tipo de Gestión y Folio Manual -->
+                <fieldset class="border border-slate-200 rounded-xl p-5 bg-slate-50/50">
+                    <legend class="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full">
+                        <i class="fa-solid fa-id-card mr-1"></i> 1. Tipo de Gestión y Folio
+                    </legend>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Tipo de Gestión * (Bloqueado por Departamento)</label>
+                            <select id="tipoGestion" class="w-full bg-slate-100 border border-slate-300 rounded-lg p-2.5 text-sm font-bold text-slate-700 focus:outline-none cursor-not-allowed" disabled>
+                                <option value="BIENESTAR SOCIAL 2026">BIENESTAR SOCIAL 2026</option>
+                                <option value="PUEBLO Y TERRITORIO 2026">PUEBLO Y TERRITORIO 2026</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Folio * (Ingreso Manual)</label>
+                            <input type="text" id="folio" placeholder="Ej. BS0001 o DPT-0001" class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm font-mono font-bold text-emerald-800 uppercase focus:ring-2 focus:ring-emerald-500 focus:outline-none" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Fecha de Recepción *</label>
+                            <input type="date" id="fecha" class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" required>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- FIELDSET 2: Datos del Solicitante -->
+                <fieldset class="border border-slate-200 rounded-xl p-5 bg-slate-50/50">
+                    <legend class="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full">
+                        <i class="fa-solid fa-user mr-1"></i> 2. Datos del Solicitante
+                    </legend>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-3">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Nombre Completo * (Verificación automática)</label>
+                            <input type="text" id="nombre" placeholder="Nombre completo del ciudadano o representante" class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none uppercase" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Cargo / Representación *</label>
+                            <select id="cargo" class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" required>
+                                <option value="CIUDADANO" selected>CIUDADANO</option>
+                                <option value="AGENTE MUNICIPAL">AGENTE MUNICIPAL</option>
+                                <option value="SUB AGENTE MUNICIPAL">SUB AGENTE MUNICIPAL</option>
+                                <option value="JEFE DE MANZANA">JEFE DE MANZANA</option>
+                                <option value="COORDINADOR">COORDINADOR</option>
+                                <option value="DIRECTOR">DIRECTOR</option>
+                                <option value="OTRO">OTRO</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label id="labelUbicacion" class="block text-xs font-bold text-slate-700 mb-1">Colonia o Localidad *</label>
+                            <input type="text" id="colonia" placeholder="Ej. Belén Grande, El Salto" class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none uppercase" required>
+                        </div>
+                        <div class="md:col-span-4">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Referencias de Contacto / Dirección</label>
+                            <input type="text" id="referencias" placeholder="Número telefónico o señas particulares de ubicación" class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- FIELDSET 3: Requerimiento y Clasificación -->
+                <fieldset class="border border-slate-200 rounded-xl p-5 bg-slate-50/50">
+                    <legend class="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full">
+                        <i class="fa-solid fa-box-archive mr-1"></i> 3. Detalles de la Solicitud
+                    </legend>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
+                        <!-- Clasificación Inteligente -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Clasificación * (Inteligente)</label>
+                            <input type="text" id="clasificacion" list="listaClasificaciones" placeholder="Seleccione o escriba nueva..." class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none uppercase" required>
+                            <datalist id="listaClasificaciones"></datalist>
+                        </div>
+
+                        <!-- Requerimiento Resumido -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Requerimiento Resumido *</label>
+                            <input type="text" id="requerimiento" placeholder="Ej. Apoyo económico, Láminas, Lámparas" class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none uppercase" required>
+                        </div>
+
+                        <!-- Ruta Logística Inteligente -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Ruta Logística * (Inteligente)</label>
+                            <input type="text" id="ruta" list="listaRutas" placeholder="Seleccione o escriba ruta..." class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none uppercase" required>
+                            <datalist id="listaRutas"></datalist>
+                        </div>
+
+                        <!-- Zona de Prioridad Inteligente (Exclusiva para Bienestar Social) -->
+                        <div id="contenedorPrioridad">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Zona de Prioridad (Inteligente)</label>
+                            <input type="text" id="prioridad" list="listaPrioridades" placeholder="NORMAL, PRIORITARIA..." class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none uppercase">
+                            <datalist id="listaPrioridades"></datalist>
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Detalles Amplios del Requerimiento *</label>
+                            <textarea id="detalles" rows="2" placeholder="Describa a detalle la petición formulada por el solicitante..." class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" required></textarea>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Botones de Acción -->
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button type="reset" class="px-5 py-2.5 bg-slate-200 text-slate-700 font-semibold text-sm rounded-lg hover:bg-slate-300 transition-colors">
+                        <i class="fa-solid fa-rotate-left mr-1"></i> Limpiar Campos
+                    </button>
+                    <button type="submit" class="px-6 py-2.5 bg-emerald-700 text-white font-bold text-sm rounded-lg hover:bg-emerald-800 transition-colors shadow-md flex items-center">
+                        <i class="fa-solid fa-floppy-disk mr-2"></i> Guardar Petición
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Tabla de Registros Recientes -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-6 border-b border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center">
+                    <i class="fa-solid fa-clock-rotate-left text-emerald-600 mr-2"></i> Solicitudes Registradas Recientemente
+                </h3>
+                <div class="relative w-full md:w-72">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-sm"></i>
+                    <input type="text" id="buscarRecepcion" placeholder="Buscar por Folio, Nombre..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-600">
+                    <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider border-b border-slate-200">
+                        <tr>
+                            <th class="py-3 px-4">Folio</th>
+                            <th class="py-3 px-4">Fecha</th>
+                            <th class="py-3 px-4">Solicitante / Cargo</th>
+                            <th id="thUbicacion" class="py-3 px-4">Colonia</th>
+                            <th class="py-3 px-4">Requerimiento</th>
+                            <th class="py-3 px-4">Clasificación</th>
+                            <th class="py-3 px-4">Estatus</th>
+                            <th class="py-3 px-4 text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaRecepcionBody" class="divide-y divide-slate-100">
+                        <!-- Carga dinámica vía JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="paginadorRecepcion" class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500 gap-3">
+                <!-- Paginador dinámico -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal Elegante de Alerta por Coincidencia de Solicitante -->
+    <div id="modalCoincidencia" class="fixed inset-0 bg-slate-900 bg-opacity-60 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 relative transform transition-all">
+            <div class="flex items-center space-x-3 mb-4 text-amber-600">
+                <i class="fa-solid fa-circle-exclamation text-3xl"></i>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800">¡Ciudadano con Solicitudes Previas!</h3>
+                    <p class="text-xs text-slate-500">El nombre ingresado cuenta con registros anteriores en el sistema:</p>
+                </div>
+            </div>
+
+            <div class="max-h-64 overflow-y-auto border border-slate-200 rounded-xl mb-4">
+                <table class="w-full text-left text-xs text-slate-600">
+                    <thead class="bg-slate-100 text-slate-700 font-bold uppercase">
+                        <tr>
+                            <th class="py-2.5 px-3">Folio</th>
+                            <th class="py-2.5 px-3">Fecha</th>
+                            <th class="py-2.5 px-3">Requerimiento</th>
+                            <th class="py-2.5 px-3">Estatus</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaCoincidenciasBody" class="divide-y divide-slate-100">
+                        <!-- Coincidencias inyectadas por JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-end space-x-3">
+                <button onclick="cerrarModalCoincidencia()" class="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow transition-colors">
+                    Entendido, Continuar Registro
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Editar Solicitud -->
+    <div id="modalEditar" class="fixed inset-0 bg-slate-900 bg-opacity-60 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative transform transition-all">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-200 pb-3">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center">
+                    <i class="fa-solid fa-pen-to-square text-emerald-600 mr-2"></i> Editar Solicitud
+                </h3>
+                <button onclick="cerrarModalEditar()" class="text-slate-400 hover:text-slate-600 text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="formEditar" onsubmit="guardarEdicion(event)" class="space-y-4">
+                <input type="hidden" id="editId">
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Folio</label>
+                    <input type="text" id="editFolio" class="w-full bg-slate-100 border border-slate-300 rounded-lg p-2 text-sm font-mono font-bold text-slate-700" readonly>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Nombre del Solicitante *</label>
+                    <input type="text" id="editNombre" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-sm uppercase focus:ring-2 focus:ring-emerald-500 focus:outline-none" required>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Requerimiento Resumido *</label>
+                    <input type="text" id="editRequerimiento" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-sm uppercase focus:ring-2 focus:ring-emerald-500 focus:outline-none" required>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Clasificación *</label>
+                    <input type="text" id="editClasificacion" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-sm uppercase focus:ring-2 focus:ring-emerald-500 focus:outline-none" required>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Detalles Amplios</label>
+                    <textarea id="editDetalles" rows="2" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-3">
+                    <button type="button" onclick="cerrarModalEditar()" class="px-4 py-2 bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl hover:bg-slate-300 transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-700 text-white font-bold text-xs rounded-xl hover:bg-emerald-800 transition-colors shadow-md">
+                        Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Contenedor para Notificaciones Flotantes (Toasts) -->
+    <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col space-y-3 pointer-events-none"></div>
+
+    <!-- Script global de utilidades -->
+    <script>
+        function cerrarModalCoincidencia() {
+            document.getElementById('modalCoincidencia').classList.add('hidden');
+        }
+
+        function cerrarSesion() {
+            localStorage.removeItem('usuarioActivo');
+            window.location.href = '../index.html';
+        }
+
+        // Sistema global de Notificaciones Flotantes (Toasts)
+        window.mostrarNotificacion = function(mensaje, tipo = 'success') {
+            const contenedor = document.getElementById('toastContainer');
+            if (!contenedor) return;
+
+            const toast = document.createElement('div');
+            
+            let bgColores = 'bg-emerald-700 text-white';
+            let icono = '<i class="fa-solid fa-circle-check text-lg"></i>';
+
+            if (tipo === 'error') {
+                bgColores = 'bg-rose-700 text-white';
+                icono = '<i class="fa-solid fa-circle-exclamation text-lg"></i>';
+            } else if (tipo === 'warning') {
+                bgColores = 'bg-amber-600 text-white';
+                icono = '<i class="fa-solid fa-triangle-exclamation text-lg"></i>';
+            } else if (tipo === 'info') {
+                bgColores = 'bg-blue-600 text-white';
+                icono = '<i class="fa-solid fa-bell text-lg"></i>';
+            }
+
+            toast.className = `pointer-events-auto flex items-center space-x-3 px-5 py-3.5 rounded-2xl shadow-2xl transform transition-all duration-300 translate-y-4 opacity-0 ${bgColores} font-medium text-xs md:text-sm`;
+            toast.innerHTML = `${icono} <span>${mensaje}</span>`;
+
+            contenedor.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-4', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-4', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        };
+    </script>
+</body>
+</html>

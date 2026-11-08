@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Usuario - Importador por Departamento</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS CDN para leer Excel en el navegador -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script type="module" src="importar.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- Header Super Usuario -->
+    <header class="bg-amber-800 text-white shadow-md px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex items-center space-x-3">
+            <a href="../index.html" class="text-amber-200 hover:text-white transition-colors mr-2">
+                <i class="fa-solid fa-arrow-left text-lg"></i>
+            </a>
+            <i class="fa-solid fa-file-excel text-2xl"></i>
+            <div>
+                <h1 class="text-xl font-bold tracking-wide">Importación por Módulo y Departamento</h1>
+                <p class="text-xs text-amber-200 font-semibold">Super Usuario: Angel Vidal</p>
+            </div>
+        </div>
+        <button onclick="cerrarSesion()" class="bg-rose-700 hover:bg-rose-800 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors flex items-center shadow">
+            <i class="fa-solid fa-right-from-bracket mr-1.5"></i> Salir
+        </button>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-10 w-full flex-grow space-y-6">
+
+        <!-- Zona de Depuración / Borrado Masivo -->
+        <div class="bg-rose-50 border border-rose-200 p-6 rounded-2xl shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h3 class="text-sm font-bold uppercase tracking-wider text-rose-800">
+                    <i class="fa-solid fa-triangle-exclamation mr-1"></i> Zona de Depuración General
+                </h3>
+                <p class="text-xs text-rose-600 mt-1">Elimina todas las solicitudes almacenadas en Firebase para reiniciar la base de datos desde cero.</p>
+            </div>
+            <button id="btnBorrarTodo" class="px-5 py-2.5 bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs rounded-xl shadow transition-colors flex items-center whitespace-nowrap">
+                <i class="fa-solid fa-trash-can mr-2"></i> Borrar Todos los Registros
+            </button>
+        </div>
+
+        <!-- Selección de Departamento Destino -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-amber-800">
+                <i class="fa-solid fa-filter mr-1"></i> 1. Seleccione el Departamento de Destino *
+            </h3>
+            <select id="selectDepartamento" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                <option value="BIENESTAR SOCIAL 2026">BIENESTAR SOCIAL 2026</option>
+                <option value="PUEBLO Y TERRITORIO 2026">PUEBLO Y TERRITORIO 2026</option>
+            </select>
+        </div>
+
+        <!-- Zona de Carga de Archivo -->
+        <div class="bg-white p-8 rounded-2xl shadow-sm border-2 border-dashed border-amber-300 text-center space-y-4">
+            <div class="w-16 h-16 bg-amber-50 text-amber-700 rounded-2xl flex items-center justify-center text-3xl mx-auto">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-slate-800">Seleccione el archivo Excel correspondiente</h3>
+                <p class="text-xs text-slate-500 mt-1">El sistema mapeará automáticamente los campos de la primera hoja del archivo</p>
+            </div>
+            
+            <div>
+                <input type="file" id="excelFileInput" accept=".xlsx, .xls" class="hidden">
+                <button onclick="document.getElementById('excelFileInput').click()" class="px-6 py-3 bg-amber-700 hover:bg-amber-800 text-white font-bold text-sm rounded-xl shadow-md transition-colors inline-flex items-center">
+                    <i class="fa-solid fa-folder-open mr-2"></i> Buscar Archivo Excel
+                </button>
+            </div>
+        </div>
+
+        <!-- Previsualización y Estado de la Carga -->
+        <div id="panelCarga" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6 hidden">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-4">
+                <div>
+                    <h3 class="text-base font-bold text-slate-800" id="nombreArchivo">Archivo Seleccionado</h3>
+                    <p class="text-xs text-slate-500" id="resumenRegistros">0 registros listos para subir</p>
+                </div>
+                <button id="btnIniciarSubida" class="px-6 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm rounded-xl shadow transition-colors flex items-center">
+                    <i class="fa-solid fa-upload mr-2"></i> Subir a Firebase
+                </button>
+            </div>
+
+            <!-- Barra de Progreso -->
+            <div id="contenedorProgreso" class="space-y-2 hidden">
+                <div class="flex justify-between text-xs font-bold text-slate-700">
+                    <span>Progreso de Subida</span>
+                    <span id="textoPorcentaje">0%</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden border border-slate-200">
+                    <div id="barraProgreso" class="bg-amber-600 h-full w-0 transition-all duration-200"></div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Contenedor de Notificaciones Flotantes (Toasts) -->
+    <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col space-y-3 pointer-events-none"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const sesion = JSON.parse(localStorage.getItem('usuarioActivo'));
+            if (!sesion || sesion.rol !== 'super') {
+                window.location.href = '../index.html';
+            }
+        });
+        function cerrarSesion() {
+            localStorage.removeItem('usuarioActivo');
+            window.location.href = '../index.html';
+        }
+
+        // Función global para mostrar alertas estéticas tipo Toast
+        window.mostrarNotificacion = function(mensaje, tipo = 'success') {
+            const contenedor = document.getElementById('toastContainer');
+            if (!contenedor) return;
+
+            const toast = document.createElement('div');
+            
+            let bgColores = 'bg-emerald-700 text-white';
+            let icono = '<i class="fa-solid fa-circle-check text-lg"></i>';
+
+            if (tipo === 'error') {
+                bgColores = 'bg-rose-700 text-white';
+                icono = '<i class="fa-solid fa-circle-exclamation text-lg"></i>';
+            } else if (tipo === 'warning') {
+                bgColores = 'bg-amber-600 text-white';
+                icono = '<i class="fa-solid fa-triangle-exclamation text-lg"></i>';
+            } else if (tipo === 'info') {
+                bgColores = 'bg-blue-600 text-white';
+                icono = '<i class="fa-solid fa-bell text-lg"></i>';
+            }
+
+            toast.className = `pointer-events-auto flex items-center space-x-3 px-5 py-3.5 rounded-2xl shadow-2xl transform transition-all duration-300 translate-y-4 opacity-0 ${bgColores} font-medium text-xs md:text-sm`;
+            toast.innerHTML = `${icono} <span>${mensaje}</span>`;
+
+            contenedor.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-4', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-4', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        };
+    </script>
+</body>
+</html>

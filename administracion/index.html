@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Directivo - Resolución de Solicitudes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module" src="admin.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- Header Directivo -->
+    <header class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center shadow-lg">
+        <div class="flex items-center space-x-3">
+            <a href="../index.html" class="text-slate-400 hover:text-white transition-colors mr-2">
+                <i class="fa-solid fa-arrow-left text-lg"></i>
+            </a>
+            <div id="headerIcon" class="bg-teal-600 p-2 rounded-lg text-white">
+                <i class="fa-solid fa-chart-line text-xl"></i>
+            </div>
+            <div>
+                <h1 id="headerTitle" class="text-lg font-bold leading-tight">Panel Ejecutivo - Dirección & Subdirección</h1>
+                <p id="headerSubtitle" class="text-slate-400 text-xs">Gestión y Resolución de Solicitudes</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3">
+            <span id="badgeRolUsuario" class="bg-slate-800 text-teal-400 text-xs px-3 py-1.5 rounded-lg border border-slate-700 font-semibold flex items-center">
+                <i class="fa-solid fa-user-shield mr-1.5"></i> Cargando...
+            </span>
+            <button onclick="cerrarSesion()" class="bg-rose-700 hover:bg-rose-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center shadow">
+                <i class="fa-solid fa-right-from-bracket mr-1"></i> Salir
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 w-full flex-grow space-y-6">
+
+        <!-- 1. Tarjetas de KPIs -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 font-bold uppercase">Total Solicitudes</p>
+                    <h3 class="text-2xl font-black text-slate-800 mt-1" id="kpiTotal">0</h3>
+                </div>
+                <div class="w-10 h-10 bg-slate-100 text-slate-600 rounded-lg flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-amber-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-amber-600 font-bold uppercase">Pendientes</p>
+                    <h3 class="text-2xl font-black text-amber-600 mt-1" id="kpiPendientes">0</h3>
+                </div>
+                <div class="w-10 h-10 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-hourglass-half"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-blue-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-blue-600 font-bold uppercase">En Proceso</p>
+                    <h3 class="text-2xl font-black text-blue-600 mt-1" id="kpiProceso">0</h3>
+                </div>
+                <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-gears"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-emerald-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-emerald-600 font-bold uppercase">Realizados</p>
+                    <h3 class="text-2xl font-black text-emerald-600 mt-1" id="kpiRealizados">0</h3>
+                </div>
+                <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-rose-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-rose-600 font-bold uppercase">Prioritarias</p>
+                    <h3 class="text-2xl font-black text-rose-600 mt-1" id="kpiPrioritarias">0</h3>
+                </div>
+                <div class="w-10 h-10 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Filtros Avanzados -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="text-sm font-bold text-slate-800 flex items-center">
+                    <i class="fa-solid fa-filter text-teal-600 mr-2"></i> Filtros de Búsqueda y Seguimiento
+                </h3>
+                <button id="btnLimpiarFiltros" class="text-xs text-teal-700 font-semibold hover:underline">Limpiar Filtros</button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Fecha Desde</label>
+                    <input type="date" id="filterFechaDesde" class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Fecha Hasta</label>
+                    <input type="date" id="filterFechaHasta" class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Tipo de Gestión</label>
+                    <select id="filterGestion" class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                        <option value="">TODAS (Bienestar & Territorio)</option>
+                        <option value="BIENESTAR SOCIAL 2026">BIENESTAR SOCIAL 2026</option>
+                        <option value="PUEBLO Y TERRITORIO 2026">PUEBLO Y TERRITORIO 2026</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Estatus</label>
+                    <select id="filterEstatus" class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                        <option value="">TODOS</option>
+                        <option value="PENDIENTE">PENDIENTE</option>
+                        <option value="EN PROCESO">EN PROCESO</option>
+                        <option value="CANALIZADO">CANALIZADO</option>
+                        <option value="REALIZADO">REALIZADO</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Búsqueda General</label>
+                    <input type="text" id="filterBuscar" placeholder="Folio, Nombre, Colonia..." class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Tabla Principal -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                <span class="text-xs font-bold text-slate-700">Control General de Dictámenes y Canalización</span>
+                <button id="btnExportarExcel" class="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-colors flex items-center">
+                    <i class="fa-solid fa-file-excel mr-1"></i> Exportar a Excel
+                </button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-600">
+                    <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider border-b border-slate-200">
+                        <tr>
+                            <th class="py-3 px-3">Folio</th>
+                            <th class="py-3 px-3">Fecha</th>
+                            <th class="py-3 px-3">Solicitante / Ubicación</th>
+                            <th class="py-3 px-3">Requerimiento & Detalles</th>
+                            <th class="py-3 px-3">Clasificación / Ruta</th>
+                            <th class="py-3 px-3">Observaciones de Dirección</th>
+                            <th class="py-3 px-3">Estatus</th>
+                            <th class="py-3 px-3 text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaAdminBody" class="divide-y divide-slate-100">
+                        <!-- Dinámico -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="paginadorAdmin" class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500 gap-3"></div>
+        </div>
+
+    </main>
+
+    <!-- Modal Dictamen -->
+    <div id="modalDictamen" class="fixed inset-0 bg-slate-900 bg-opacity-60 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative transform transition-all">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-200 pb-3">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center">
+                    <i class="fa-solid fa-pen-to-square text-teal-600 mr-2"></i> Dictaminar Solicitud
+                </h3>
+                <button onclick="cerrarModalDictamen()" class="text-slate-400 hover:text-slate-600 text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="formDictamen" onsubmit="guardarDictamen(event)" class="space-y-4">
+                <input type="hidden" id="dictamenId">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Folio & Solicitante</label>
+                    <input type="text" id="dictamenFolio" class="w-full bg-slate-100 border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-700" readonly>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Estatus Actual *</label>
+                    <select id="dictamenEstatus" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-bold focus:ring-2 focus:ring-teal-500 focus:outline-none" required>
+                        <option value="PENDIENTE">PENDIENTE</option>
+                        <option value="EN PROCESO">EN PROCESO</option>
+                        <option value="CANALIZADO">CANALIZADO</option>
+                        <option value="REALIZADO">REALIZADO</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Observaciones / Indicaciones</label>
+                    <textarea id="dictamenObservaciones" rows="3" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none"></textarea>
+                </div>
+                <div class="flex justify-end space-x-3 pt-3">
+                    <button type="button" onclick="cerrarModalDictamen()" class="px-4 py-2 bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl hover:bg-slate-300 transition-colors">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-teal-700 text-white font-bold text-xs rounded-xl hover:bg-teal-800 transition-colors shadow-md">Guardar Dictamen</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col space-y-3 pointer-events-none"></div>
+
+    <script>
+        function cerrarSesion() {
+            localStorage.removeItem('usuarioActivo');
+            window.location.href = '../index.html';
+        }
+
+        window.mostrarNotificacion = function(mensaje, tipo = 'success') {
+            const contenedor = document.getElementById('toastContainer');
+            if (!contenedor) return;
+            const toast = document.createElement('div');
+            let bgColores = 'bg-teal-700 text-white';
+            let icono = '<i class="fa-solid fa-circle-check text-lg"></i>';
+            if (tipo === 'error') { bgColores = 'bg-rose-700 text-white'; icono = '<i class="fa-solid fa-circle-exclamation text-lg"></i>'; }
+            else if (tipo === 'warning') { bgColores = 'bg-amber-600 text-white'; icono = '<i class="fa-solid fa-triangle-exclamation text-lg"></i>'; }
+            else if (tipo === 'info') { bgColores = 'bg-blue-600 text-white'; icono = '<i class="fa-solid fa-bell text-lg"></i>'; }
+            toast.className = `pointer-events-auto flex items-center space-x-3 px-5 py-3.5 rounded-2xl shadow-2xl transform transition-all duration-300 translate-y-4 opacity-0 ${bgColores} font-medium text-xs md:text-sm`;
+            toast.innerHTML = `${icono} <span>${mensaje}</span>`;
+            contenedor.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-y-4', 'opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('translate-y-4', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        };
+    </script>
+</body>
+</html>
