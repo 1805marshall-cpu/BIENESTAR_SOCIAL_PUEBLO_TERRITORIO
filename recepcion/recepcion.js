@@ -220,13 +220,13 @@ function actualizarDatalistsInteligentes() {
 }
 
 // Renderizado de Tabla con Paginación a 10 filas y Botones de Acción
+// Renderizado de Tabla con Paginación a 10 filas, Numeración y Resolución Directiva
 function renderizarTabla() {
     const tbody = document.getElementById('tablaRecepcionBody');
     if (!tbody) return;
 
     const busqueda = document.getElementById('buscarRecepcion')?.value.toLowerCase() || '';
     
-    // Almacenamos el resultado filtrado en la variable global para la impresión
     ultimosFiltrados = solicitudes.filter(s => {
         const perteneceDepto = sesionActual.rol === 'bienestar' 
             ? s.tipoGestion?.includes('BIENESTAR') 
@@ -247,21 +247,37 @@ function renderizarTabla() {
     const fin = inicio + filasPorPagina;
     const paginados = ultimosFiltrados.slice(inicio, fin);
 
-    tbody.innerHTML = paginados.map(s => {
+    tbody.innerHTML = paginados.map((s, index) => {
+        const numeroSecuencial = inicio + index + 1; // Numeración continua basada en la página
         const ubi = s.colonia || s.localidad || 'N/D';
+        
+        // Enlace para que recepción vea la evidencia fotográfica subida por la directora
+        const evidenciaHtml = s.fotoUrl ? 
+            `<a href="${s.fotoUrl}" target="_blank" class="text-teal-700 font-bold hover:underline flex items-center text-[10px] mt-1"><i class="fa-solid fa-image mr-1"></i> Ver Evidencia Resolución</a>` : 
+            `<span class="text-[10px] text-slate-400 block mt-1">Sin evidencia aún</span>`;
+
         return `
             <tr class="hover:bg-slate-50">
-                <td class="py-3 px-4 font-mono font-bold text-emerald-800">${s.folio || 'S/F'}</td>
-                <td class="py-3 px-4">${s.fecha || '--'}</td>
-                <td class="py-3 px-4">
+                <td class="py-3 px-3 font-bold text-slate-500 text-center">${numeroSecuencial}</td>
+                <td class="py-3 px-3 font-mono font-bold text-emerald-800">${s.folio || 'S/F'}</td>
+                <td class="py-3 px-3">${s.fecha || '--'}</td>
+                <td class="py-3 px-3">
                     <span class="font-bold text-slate-800 block">${s.nombre || ''}</span>
                     <span class="text-[10px] text-slate-400">${s.cargo || ''}</span>
                 </td>
-                <td class="py-3 px-4">${ubi}</td>
-                <td class="py-3 px-4 font-medium">${s.requerimiento || ''}</td>
-                <td class="py-3 px-4"><span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-semibold text-[10px]">${s.clasificacion || ''}</span></td>
-                <td class="py-3 px-4">${obtenerBadgeEstatus(s.status)}</td>
-                <td class="py-3 px-4 text-center space-x-2">
+                <td class="py-3 px-3">${ubi}</td>
+                <td class="py-3 px-3">
+                    <span class="font-semibold text-slate-700 block">${s.requerimiento || ''}</span>
+                    <span class="text-[10px] text-slate-500 line-clamp-1">${s.detalles || ''}</span>
+                </td>
+                <td class="py-3 px-3"><span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-semibold text-[10px]">${s.clasificacion || ''}</span></td>
+                <td class="py-3 px-3 text-slate-600 text-[11px] italic bg-slate-50/50 rounded">
+                    <span class="font-bold not-italic text-slate-700 block text-[10px]">Resolución / Obs:</span>
+                    ${s.observaciones || 'Pendiente de dictamen'}
+                    ${evidenciaHtml}
+                </td>
+                <td class="py-3 px-3">${obtenerBadgeEstatus(s.status)}</td>
+                <td class="py-3 px-3 text-center space-x-2">
                     <button onclick="abrirModalEditar('${s.id}')" class="text-blue-600 hover:text-blue-800 font-bold p-1" title="Editar Solicitud">
                         <i class="fa-solid fa-pen-to-square"></i>
                     </button>
@@ -275,6 +291,7 @@ function renderizarTabla() {
 
     renderizarPaginador(ultimosFiltrados.length);
 }
+
 
 // Función Global para Imprimir lo Filtrado
 window.imprimirFiltrados = () => {

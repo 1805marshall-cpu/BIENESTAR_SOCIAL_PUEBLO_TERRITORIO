@@ -128,7 +128,11 @@ function escucharCitasAdmin() {
         const badge = document.getElementById('badgeTotalCitas');
         if (badge) badge.textContent = listaCitasGlobal.length;
         
+        const badgeTab = document.getElementById('badgeTotalCitasTab');
+        if (badgeTab) badgeTab.textContent = `${listaCitasGlobal.length} citas registradas`;
+
         poblarResumenFechas();
+        poblarResumenFechasModal();
         verificarCercaniaCitasLogica();
     });
 }
@@ -278,6 +282,11 @@ function renderizarTabla() {
 
     tbody.innerHTML = paginados.map(s => {
         const ubi = s.colonia || s.localidad || 'N/D';
+        // Enlace para visualizar la evidencia fotográfica de la resolución subida por la directora
+        const evidenciaHtml = s.fotoUrl ? 
+            `<a href="${s.fotoUrl}" target="_blank" class="text-teal-700 font-bold hover:underline flex items-center text-[10px] mt-1"><i class="fa-solid fa-image mr-1"></i> Ver Evidencia Resolución</a>` : 
+            `<span class="text-[10px] text-slate-400 block mt-1">Sin evidencia aún</span>`;
+
         return `
             <tr class="hover:bg-slate-50">
                 <td class="py-3 px-3 font-mono font-bold text-teal-800">${s.folio || 'S/F'}</td>
@@ -296,6 +305,7 @@ function renderizarTabla() {
                 </td>
                 <td class="py-3 px-3 text-slate-500 text-[11px] italic">
                     ${s.observaciones || 'Sin observaciones'}
+                    ${evidenciaHtml}
                 </td>
                 <td class="py-3 px-3">${obtenerBadgeEstatus(s.status)}</td>
                 <td class="py-3 px-3 text-center space-x-1">
@@ -339,6 +349,32 @@ function poblarResumenFechas() {
         const colorEstado = calcularColorTiempo(c.fechaCita, c.horaCita, c.estatus);
         return `
             <div onclick="filtrarCitasPorFecha('${c.fechaCita}')" class="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-teal-50 cursor-pointer transition-colors flex items-center justify-between shadow-sm">
+                <div class="flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full ${colorEstado}"></span>
+                    <div>
+                        <p class="text-xs font-bold text-slate-800">${c.fechaCita}</p>
+                        <p class="text-[10px] text-slate-500 truncate max-w-[120px]">${c.nombreSolicitante}</p>
+                    </div>
+                </div>
+                <span class="text-[10px] font-mono font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">${c.horaCita || '--:--'}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+function poblarResumenFechasModal() {
+    const contenedor = document.getElementById('listaResumenFechasModal');
+    if (!contenedor) return;
+
+    if (listaCitasGlobal.length === 0) {
+        contenedor.innerHTML = `<p class="text-[11px] text-slate-400 text-center py-4">No hay citas registradas.</p>`;
+        return;
+    }
+
+    contenedor.innerHTML = listaCitasGlobal.map(c => {
+        const colorEstado = calcularColorTiempo(c.fechaCita, c.horaCita, c.estatus);
+        return `
+            <div onclick="filtrarCitasPorFechaModal('${c.fechaCita}')" class="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-teal-50 cursor-pointer transition-colors flex items-center justify-between shadow-sm">
                 <div class="flex items-center space-x-2">
                     <span class="w-2.5 h-2.5 rounded-full ${colorEstado}"></span>
                     <div>
@@ -406,11 +442,53 @@ window.filtrarCitasPorFecha = (fechaSeleccionada) => {
     `).join('');
 };
 
+window.filtrarCitasPorFechaModal = (fechaSeleccionada) => {
+    const contenedor = document.getElementById('contenedorCitasDiaModal');
+    const titulo = document.getElementById('tituloDetalleFechaModal');
+    const contador = document.getElementById('contadorCitasDiaModal');
+    
+    const filtradas = listaCitasGlobal.filter(c => c.fechaCita === fechaSeleccionada);
+    
+    if (titulo) titulo.innerHTML = `<span>Citas para el: ${fechaSeleccionada}</span>`;
+    if (contador) contador.textContent = `${filtradas.length} citas`;
+
+    if (filtradas.length === 0) {
+        contenedor.innerHTML = `<p class="text-xs text-slate-400 text-center py-10">No hay citas agendadas para esta fecha.</p>`;
+        return;
+    }
+
+    contenedor.innerHTML = filtradas.map(c => `
+        <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-2 shadow-sm">
+            <div class="flex justify-between items-start">
+                <div>
+                    <span class="text-[10px] font-mono font-bold text-teal-800 bg-teal-100 px-2 py-0.5 rounded">${c.folio}</span>
+                    <h5 class="text-xs font-bold text-slate-800 mt-1">${c.nombreSolicitante}</h5>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs font-bold text-slate-700 bg-white border border-slate-200 px-2.5 py-1 rounded-lg shadow-sm">${c.horaCita || '--:--'} hrs</span>
+                    <span class="block text-[10px] font-bold mt-1 text-slate-500 uppercase">${c.estatus || 'PROGRAMADA'}</span>
+                </div>
+            </div>
+            <p class="text-xs text-slate-600 bg-white p-2.5 rounded-xl border border-slate-200">
+                <strong class="text-slate-700">Asunto:</strong> ${c.asunto || 'Sin especificar'}
+            </p>
+            <p class="text-[10px] text-slate-400 italic">Agendado por: ${c.agendadoPor || 'Recepción'}</p>
+        </div>
+    `).join('');
+};
+
 window.cargarCitasHoy = () => {
     const hoy = new Date().toISOString().split('T')[0];
     const inputFecha = document.getElementById('filtroFechaCalendario');
     if (inputFecha) inputFecha.value = hoy;
     filtrarCitasPorFecha(hoy);
+};
+
+window.cargarCitasHoyModal = () => {
+    const hoy = new Date().toISOString().split('T')[0];
+    const inputFecha = document.getElementById('filtroFechaCalendarioModal');
+    if (inputFecha) inputFecha.value = hoy;
+    filtrarCitasPorFechaModal(hoy);
 };
 
 // --- FIN FUNCIONES DEL CALENDARIO ---
@@ -423,6 +501,10 @@ window.abrirModalDictamen = (id) => {
     document.getElementById('dictamenFolio').value = `${solicitud.folio || 'S/F'} - ${solicitud.nombre || ''}`;
     document.getElementById('dictamenEstatus').value = solicitud.status || 'PENDIENTE';
     document.getElementById('dictamenObservaciones').value = solicitud.observaciones || '';
+    
+    // Limpiar input de archivo al abrir
+    const inputFoto = document.getElementById('dictamenFoto');
+    if (inputFoto) inputFoto.value = '';
 
     document.getElementById('modalDictamen').classList.remove('hidden');
 };
@@ -431,18 +513,37 @@ window.cerrarModalDictamen = () => {
     document.getElementById('modalDictamen').classList.add('hidden');
 };
 
+// Función auxiliar para convertir la evidencia a Base64
+const convertirBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+    });
+};
+
 window.guardarDictamen = async (e) => {
     e.preventDefault();
     const id = document.getElementById('dictamenId').value;
     const status = document.getElementById('dictamenEstatus').value;
     const observaciones = document.getElementById('dictamenObservaciones').value.trim();
+    const inputFoto = document.getElementById('dictamenFoto');
 
     try {
+        let datosActualizar = { status, observaciones };
+
+        // Si la directora adjuntó una foto de evidencia de la resolución, la procesamos
+        if (inputFoto && inputFoto.files[0]) {
+            const fotoBase64 = await convertirBase64(inputFoto.files[0]);
+            datosActualizar.fotoUrl = fotoBase64;
+        }
+
         const docRef = doc(db, "solicitudes", id);
-        await updateDoc(docRef, { status, observaciones });
+        await updateDoc(docRef, datosActualizar);
 
         cerrarModalDictamen();
-        if (window.mostrarNotificacion) window.mostrarNotificacion("✅ Dictamen actualizado con éxito", "success");
+        if (window.mostrarNotificacion) window.mostrarNotificacion("✅ Dictamen y evidencia guardados con éxito", "success");
     } catch (error) {
         console.error("Error al dictaminar:", error);
         if (window.mostrarNotificacion) window.mostrarNotificacion("❌ Error al guardar el dictamen", "error");
