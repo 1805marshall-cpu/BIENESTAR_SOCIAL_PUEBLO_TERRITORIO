@@ -137,36 +137,111 @@
             </div>
         </div>
 
-        <!-- 3. Tabla Principal -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-                <span class="text-xs font-bold text-slate-700">Control General de Dictámenes y Canalización</span>
-                <button id="btnExportarExcel" class="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-colors flex items-center">
-                    <i class="fa-solid fa-file-excel mr-1"></i> Exportar a Excel
+        <!-- 3. SISTEMA DE PESTAÑAS (TABS) PARA LAS SECCIONES -->
+        <div class="space-y-4">
+            <!-- Botones de Pestañas -->
+            <div class="flex items-center space-x-2 border-b border-slate-200 pb-2">
+                <button onclick="cambiarPestanaAdmin('solicitudes')" id="tabBtnSolicitudes" class="px-5 py-2.5 rounded-xl font-bold text-xs flex items-center space-x-2 transition-colors bg-teal-700 text-white shadow">
+                    <i class="fa-solid fa-clipboard-list text-sm"></i>
+                    <span>Control de Solicitudes y Dictámenes</span>
+                </button>
+                <button onclick="cambiarPestanaAdmin('citas')" id="tabBtnCitas" class="px-5 py-2.5 rounded-xl font-bold text-xs flex items-center space-x-2 transition-colors bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 shadow-sm">
+                    <i class="fa-solid fa-calendar-days text-sm text-teal-600"></i>
+                    <span>Agenda y Calendario de Citas</span>
                 </button>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs text-slate-600">
-                    <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider border-b border-slate-200">
-                        <tr>
-                            <th class="py-3 px-3">Folio</th>
-                            <th class="py-3 px-3">Fecha</th>
-                            <th class="py-3 px-3">Solicitante / Ubicación</th>
-                            <th class="py-3 px-3">Requerimiento & Detalles</th>
-                            <th class="py-3 px-3">Clasificación / Ruta</th>
-                            <th class="py-3 px-3">Observaciones de Dirección</th>
-                            <th class="py-3 px-3">Estatus</th>
-                            <th class="py-3 px-3 text-center">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tablaAdminBody" class="divide-y divide-slate-100">
-                        <!-- Dinámico -->
-                    </tbody>
-                </table>
+            <!-- CONTENEDOR 1: TABLA PRINCIPAL DE SOLICITUDES -->
+            <div id="seccionSolicitudesAdmin" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden block">
+                <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                    <span class="text-xs font-bold text-slate-700">Control General de Dictámenes y Canalización</span>
+                    <button id="btnExportarExcel" class="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-colors flex items-center">
+                        <i class="fa-solid fa-file-excel mr-1"></i> Exportar a Excel
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider border-b border-slate-200">
+                            <tr>
+                                <th class="py-3 px-3">Folio</th>
+                                <th class="py-3 px-3">Fecha</th>
+                                <th class="py-3 px-3">Solicitante / Ubicación</th>
+                                <th class="py-3 px-3">Requerimiento & Detalles</th>
+                                <th class="py-3 px-3">Clasificación / Ruta</th>
+                                <th class="py-3 px-3">Observaciones de Dirección</th>
+                                <th class="py-3 px-3">Estatus</th>
+                                <th class="py-3 px-3 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaAdminBody" class="divide-y divide-slate-100">
+                            <!-- Dinámico -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="paginadorAdmin" class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500 gap-3"></div>
             </div>
 
-            <div id="paginadorAdmin" class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500 gap-3"></div>
+            <!-- CONTENEDOR 2: AGENDA Y CALENDARIO DE CITAS -->
+            <div id="seccionCitasAdmin" class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 hidden space-y-4">
+                <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+                    <div class="flex items-center space-x-2">
+                        <div class="bg-teal-100 text-teal-800 p-2 rounded-xl">
+                            <i class="fa-solid fa-calendar-days text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800">Agenda de Citas - Dirección General</h3>
+                            <p class="text-[11px] text-slate-500">Monitoreo y control de tiempos de audiencia</p>
+                        </div>
+                    </div>
+                    <span class="text-xs bg-teal-50 text-teal-700 px-3 py-1 rounded-full font-bold" id="badgeTotalCitasTab">0 citas registradas</span>
+                </div>
+
+                <!-- Leyenda de Colores de Tiempos -->
+                <div class="flex flex-wrap items-center gap-4 bg-slate-50 p-3 rounded-xl text-xs font-semibold text-slate-700 border border-slate-200">
+                    <span class="text-slate-500 font-bold">Leyenda de Tiempos:</span>
+                    <div class="flex items-center space-x-1.5"><span class="w-3 h-3 rounded-full bg-rose-500"></span><span>Vencida / En curso hoy</span></div>
+                    <div class="flex items-center space-x-1.5"><span class="w-3 h-3 rounded-full bg-amber-500"></span><span>Menos de 24 hrs</span></div>
+                    <div class="flex items-center space-x-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500"></span><span>Próxima (Con tiempo)</span></div>
+                    <div class="flex items-center space-x-1.5"><span class="w-3 h-3 rounded-full bg-slate-400"></span><span>Atendida / Cancelada</span></div>
+                </div>
+
+                <!-- Contenido Interactivo del Calendario -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+                    
+                    <!-- Columna Izquierda: Selector de Fecha -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col justify-between">
+                        <div>
+                            <h4 class="text-xs font-bold uppercase text-slate-600 mb-3 flex items-center justify-between">
+                                <span>Filtrar por Fecha</span>
+                                <input type="date" id="filtroFechaCalendario" class="border border-slate-300 rounded-lg p-1 text-xs bg-white">
+                            </h4>
+                            <div id="listaResumenFechas" class="space-y-2 max-h-72 overflow-y-auto pr-1">
+                                <!-- Se llena dinámicamente con las citas -->
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-200 text-center">
+                            <button onclick="cargarCitasHoy()" class="w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs transition-colors">
+                                Ver Citas de Hoy
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Columna Derecha: Detalle de Citas del Día Seleccionado -->
+                    <div class="md:col-span-2 border border-slate-200 rounded-2xl p-4 flex flex-col bg-white">
+                        <h4 id="tituloDetalleFecha" class="text-sm font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 flex items-center justify-between">
+                            <span>Selecciona una fecha o cita</span>
+                            <span class="text-xs bg-teal-50 text-teal-700 px-2.5 py-0.5 rounded-full font-bold" id="contadorCitasDia">0 citas</span>
+                        </h4>
+                        
+                        <div id="contenedorCitasDia" class="space-y-3 overflow-y-auto flex-grow max-h-96 pr-1">
+                            <p class="text-xs text-slate-400 text-center py-10">Haz clic en una fecha o filtro para ver los detalles de los ciudadanos.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
         </div>
 
     </main>
@@ -216,14 +291,14 @@
                     <div>
                         <h4 class="text-xs font-bold uppercase text-slate-600 mb-3 flex items-center justify-between">
                             <span>Filtrar por Fecha</span>
-                            <input type="date" id="filtroFechaCalendario" class="border border-slate-300 rounded-lg p-1 text-xs bg-white">
+                            <input type="date" id="filtroFechaCalendarioModal" class="border border-slate-300 rounded-lg p-1 text-xs bg-white">
                         </h4>
-                        <div id="listaResumenFechas" class="space-y-2 max-h-72 overflow-y-auto pr-1">
+                        <div id="listaResumenFechasModal" class="space-y-2 max-h-72 overflow-y-auto pr-1">
                             <!-- Se llena dinámicamente con las citas -->
                         </div>
                     </div>
                     <div class="mt-4 pt-3 border-t border-slate-200 text-center">
-                        <button onclick="cargarCitasHoy()" class="w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs transition-colors">
+                        <button onclick="cargarCitasHoyModal()" class="w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs transition-colors">
                             Ver Citas de Hoy
                         </button>
                     </div>
@@ -231,12 +306,12 @@
 
                 <!-- Columna Derecha: Detalle de Citas del Día Seleccionado -->
                 <div class="md:col-span-2 border border-slate-200 rounded-2xl p-4 flex flex-col bg-white">
-                    <h4 id="tituloDetalleFecha" class="text-sm font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 flex items-center justify-between">
+                    <h4 id="tituloDetalleFechaModal" class="text-sm font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 flex items-center justify-between">
                         <span>Selecciona una fecha o cita</span>
-                        <span class="text-xs bg-teal-50 text-teal-700 px-2.5 py-0.5 rounded-full font-bold" id="contadorCitasDia">0 citas</span>
+                        <span class="text-xs bg-teal-50 text-teal-700 px-2.5 py-0.5 rounded-full font-bold" id="contadorCitasDiaModal">0 citas</span>
                     </h4>
                     
-                    <div id="contenedorCitasDia" class="space-y-3 overflow-y-auto flex-grow max-h-96 pr-1">
+                    <div id="contenedorCitasDiaModal" class="space-y-3 overflow-y-auto flex-grow max-h-96 pr-1">
                         <p class="text-xs text-slate-400 text-center py-10">Haz clic en una fecha o filtro para ver los detalles de los ciudadanos.</p>
                     </div>
                 </div>
@@ -295,20 +370,55 @@
     <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col space-y-3 pointer-events-none"></div>
 
     <script>
-        function cerrarSesion() {
-            localStorage.removeItem('usuarioActivo');
-            window.location.href = '../index.html';
-        }
-
+        // Funciones para el Modal Flotante de Calendario
         function abrirModalCalendario() {
             document.getElementById('modalCalendarioCitas').classList.remove('hidden');
             const hoy = new Date().toISOString().split('T')[0];
-            const inputFecha = document.getElementById('filtroFechaCalendario');
+            const inputFecha = document.getElementById('filtroFechaCalendarioModal');
             if (inputFecha) inputFecha.value = hoy;
+            if (typeof filtrarCitasPorFechaModal === 'function') {
+                filtrarCitasPorFechaModal(hoy);
+            }
         }
 
         function cerrarModalCalendario() {
             document.getElementById('modalCalendarioCitas').classList.add('hidden');
+        }
+
+        // Función para cambiar de pestaña en el Panel Directivo
+        function cambiarPestanaAdmin(pestana) {
+            const seccionSolicitudes = document.getElementById('seccionSolicitudesAdmin');
+            const seccionCitas = document.getElementById('seccionCitasAdmin');
+            const btnSolicitudes = document.getElementById('tabBtnSolicitudes');
+            const btnCitas = document.getElementById('tabBtnCitas');
+
+            if (pestana === 'solicitudes') {
+                seccionSolicitudes.classList.remove('hidden');
+                seccionSolicitudes.classList.add('block');
+                seccionCitas.classList.remove('block');
+                seccionCitas.classList.add('hidden');
+
+                btnSolicitudes.className = "px-5 py-2.5 rounded-xl font-bold text-xs flex items-center space-x-2 transition-colors bg-teal-700 text-white shadow";
+                btnCitas.className = "px-5 py-2.5 rounded-xl font-bold text-xs flex items-center space-x-2 transition-colors bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 shadow-sm";
+            } else {
+                seccionCitas.classList.remove('hidden');
+                seccionCitas.classList.add('block');
+                seccionSolicitudes.classList.remove('block');
+                seccionSolicitudes.classList.add('hidden');
+
+                btnCitas.className = "px-5 py-2.5 rounded-xl font-bold text-xs flex items-center space-x-2 transition-colors bg-teal-700 text-white shadow";
+                btnSolicitudes.className = "px-5 py-2.5 rounded-xl font-bold text-xs flex items-center space-x-2 transition-colors bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 shadow-sm";
+                
+                // Cargar citas de hoy por defecto al abrir la pestaña de citas
+                if (typeof cargarCitasHoy === 'function') {
+                    cargarCitasHoy();
+                }
+            }
+        }
+
+        function cerrarSesion() {
+            localStorage.removeItem('usuarioActivo');
+            window.location.href = '../index.html';
         }
 
         window.mostrarNotificacion = function(mensaje, tipo = 'success') {

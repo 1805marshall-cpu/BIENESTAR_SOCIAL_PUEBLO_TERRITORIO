@@ -208,42 +208,40 @@
             const credencialesAdminTerritorio = { user: "admin.territorio@dif.gob.mx", pass: "territorio2026" };
 
             if (deptoActivo === 'bienestar') {
-                // Tarjeta 1: Recepción Bienestar Social (Karla Bernal, Mariana Antele o correo institucional)
+                // Tarjeta 1: Recepción Bienestar Social (Karla Bernal o correo institucional)
                 if ((usuario === "karla.bernal" && pass === "Karlita123..") || 
-                    (usuario === "mariana.antele" && pass === "Marianita123..") || 
                     (usuario === "bienestar@dif.gob.mx" && pass === "bienestar2026")) {
                     
-                    let nombreOperador = 'Operador Bienestar Social';
-                    if (usuario === "karla.bernal") nombreOperador = 'Karla Bernal (Bienestar Social)';
-                    if (usuario === "mariana.antele") nombreOperador = 'Mariana Antele (Bienestar Social)';
-
+                    let nombreOperador = usuario === "karla.bernal" ? 'Karla Bernal (Bienestar Social)' : 'Operador Bienestar Social';
                     localStorage.setItem('usuarioActivo', JSON.stringify({ nombre: nombreOperador, departamento: 'BIENESTAR SOCIAL 2026', rol: 'bienestar' }));
                     window.location.href = 'recepcion/index.html';
                 } else { errorMsg.classList.remove('hidden'); }
 
             } else if (deptoActivo === 'territorio') {
-                // Tarjeta 2: Recepción Pueblo y Territorio (Damaris Domínguez, Avril Gómez o correo institucional)
+                // Tarjeta 2: Recepción Pueblo y Territorio (Damaris Domínguez o correo institucional)
                 if ((usuario === "damaris.dominguez" && pass === "Damaris123..") || 
-                    (usuario === "avril.gomez" && pass === "Avril123") || 
                     (usuario === "territorio@dif.gob.mx" && pass === "territorio2026")) {
                     
-                    let nombreOperador = 'Operador Pueblo y Territorio';
-                    if (usuario === "damaris.dominguez") nombreOperador = 'Damaris Domínguez (Pueblo y Territorio)';
-                    if (usuario === "avril.gomez") nombreOperador = 'Avril Gómez (Pueblo y Territorio)';
-
+                    let nombreOperador = usuario === "damaris.dominguez" ? 'Damaris Domínguez (Pueblo y Territorio)' : 'Operador Pueblo y Territorio';
                     localStorage.setItem('usuarioActivo', JSON.stringify({ nombre: nombreOperador, departamento: 'PUEBLO Y TERRITORIO 2026', rol: 'territorio' }));
                     window.location.href = 'recepcion/index.html';
                 } else { errorMsg.classList.remove('hidden'); }
 
             } else if (deptoActivo === 'admin') {
-                // Tarjeta 3: Dirección General / Departamental
-                if (usuario === credencialesAdminBienestar.user && pass === credencialesAdminBienestar.pass) {
-                    localStorage.setItem('usuarioActivo', JSON.stringify({ nombre: 'Dirección de Bienestar Social', departamento: 'BIENESTAR SOCIAL 2026', rol: 'dir_bienestar' }));
+                // Tarjeta 3: Dirección General / Subdirección (Mariana Antele, Avril Gómez y correos institucionales)
+                if ((usuario === "mariana.antele" && pass === "Marianita123..") || 
+                    (usuario === "admin@dif.gob.mx" && pass === "admin2026")) {
+                    
+                    localStorage.setItem('usuarioActivo', JSON.stringify({ nombre: 'Mariana Antele (Dirección Bienestar Social)', departamento: 'BIENESTAR SOCIAL 2026', rol: 'dir_bienestar' }));
                     window.location.href = 'administracion/index.html';
-                } else if (usuario === credencialesAdminTerritorio.user && pass === credencialesAdminTerritorio.pass) {
-                    localStorage.setItem('usuarioActivo', JSON.stringify({ nombre: 'Dirección Pueblo y Territorio', departamento: 'PUEBLO Y TERRITORIO 2026', rol: 'dir_territorio' }));
+                } 
+                else if ((usuario === "avril.gomez" && pass === "Avril123") || 
+                           (usuario === "admin.territorio@dif.gob.mx" && pass === "territorio2026")) {
+                    
+                    localStorage.setItem('usuarioActivo', JSON.stringify({ nombre: 'Avril Gómez (Dirección Pueblo y Territorio)', departamento: 'PUEBLO Y TERRITORIO 2026', rol: 'dir_territorio' }));
                     window.location.href = 'administracion/index.html';
-                } else { errorMsg.classList.remove('hidden'); }
+                } 
+                else { errorMsg.classList.remove('hidden'); }
 
             } else if (deptoActivo === 'super') {
                 // Tarjeta 4: Super Usuario (Ángel Vidal)
@@ -253,7 +251,6 @@
                 } else { errorMsg.classList.remove('hidden'); }
             }
         }
-
     </script>
 </body>
 </html>

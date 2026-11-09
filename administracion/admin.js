@@ -133,7 +133,7 @@ function escucharCitasAdmin() {
     });
 }
 
-// --- SISTEMA DE ALERTAS AUTOMÁTICAS USANDO MOSTRARNOTIFICACION ---
+// --- SISTEMA DE ALERTAS AUTOMÁTICAS CON BARRA PERMANENTE ---
 function iniciarVerificadorCercaniaCitas() {
     if (intervalAlertasCitas) clearInterval(intervalAlertasCitas);
 
@@ -225,7 +225,6 @@ function verificarCercaniaCitasLogica() {
         contenedorBarra.innerHTML = "";
     }
 }
-
 
 function actualizarKPIs() {
     const gestionFiltro = obtenerGestionFiltroActiva();
