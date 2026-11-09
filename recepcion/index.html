@@ -165,47 +165,94 @@
             </form>
         </div>
 
-        <!-- Tabla de Registros Recientes -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="p-6 border-b border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
-                <h3 class="text-lg font-bold text-slate-800 flex items-center">
-                    <i class="fa-solid fa-clock-rotate-left text-emerald-600 mr-2"></i> Solicitudes Registradas Recientemente
-                </h3>
-                
-                <!-- Buscador y Botón de Impresión Filtrada -->
-                <div class="flex items-center space-x-3 w-full md:w-auto">
-                    <div class="relative w-full md:w-72">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-sm"></i>
-                        <input type="text" id="buscarRecepcion" placeholder="Buscar por Folio, Nombre..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        <!-- SISTEMA DE PESTAÑAS (TABS) PARA LAS TABLAS -->
+        <div class="space-y-4">
+            <!-- Botones de Pestañas -->
+            <div class="flex items-center space-x-2 border-b border-slate-200 pb-2">
+                <button onclick="cambiarPestana('solicitudes')" id="tabBtnSolicitudes" class="px-5 py-2.5 rounded-xl font-bold text-xs flex items-center space-x-2 transition-colors bg-emerald-700 text-white shadow">
+                    <i class="fa-solid fa-clipboard-list text-sm"></i>
+                    <span>Solicitudes Recientes</span>
+                </button>
+                <button onclick="cambiarPestana('citas')" id="tabBtnCitas" class="px-5 py-2.5 rounded-xl font-bold text-xs flex items-center space-x-2 transition-colors bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 shadow-sm">
+                    <i class="fa-solid fa-calendar-check text-sm text-teal-600"></i>
+                    <span>Citas con Dirección General</span>
+                </button>
+            </div>
+
+            <!-- CONTENEDOR 1: TABLA DE SOLICITUDES RECIENTES -->
+            <div id="seccionSolicitudes" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden block">
+                <div class="p-6 border-b border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center">
+                        <i class="fa-solid fa-clock-rotate-left text-emerald-600 mr-2"></i> Solicitudes Registradas Recientemente
+                    </h3>
+                    
+                    <div class="flex items-center space-x-3 w-full md:w-auto">
+                        <button onclick="abrirModalCita()" class="px-4 py-2 bg-teal-700 text-white rounded-lg text-sm font-bold hover:bg-teal-800 transition-colors flex items-center shadow whitespace-nowrap" title="Agendar Cita con Dirección General">
+                            <i class="fa-solid fa-calendar-plus mr-1.5"></i> Agendar Cita
+                        </button>
+                        <div class="relative w-full md:w-64">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-sm"></i>
+                            <input type="text" id="buscarRecepcion" placeholder="Buscar por Folio, Nombre..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </div>
+                        <button onclick="imprimirFiltrados()" class="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-bold hover:bg-slate-900 transition-colors flex items-center shadow" title="Imprimir registros filtrados">
+                            <i class="fa-solid fa-print mr-1.5"></i> Imprimir
+                        </button>
                     </div>
-                    <button onclick="imprimirFiltrados()" class="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-bold hover:bg-slate-900 transition-colors flex items-center shadow" title="Imprimir registros filtrados">
-                        <i class="fa-solid fa-print mr-1.5"></i> Imprimir
-                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider border-b border-slate-200">
+                            <tr>
+                                <th class="py-3 px-4">Folio</th>
+                                <th class="py-3 px-4">Fecha</th>
+                                <th class="py-3 px-4">Solicitante / Cargo</th>
+                                <th id="thUbicacion" class="py-3 px-4">Colonia</th>
+                                <th class="py-3 px-4">Requerimiento</th>
+                                <th class="py-3 px-4">Clasificación</th>
+                                <th class="py-3 px-4">Estatus</th>
+                                <th class="py-3 px-4 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaRecepcionBody" class="divide-y divide-slate-100">
+                            <!-- Carga dinámica vía JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="paginadorRecepcion" class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500 gap-3">
+                    <!-- Paginador dinámico -->
                 </div>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs text-slate-600">
-                    <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider border-b border-slate-200">
-                        <tr>
-                            <th class="py-3 px-4">Folio</th>
-                            <th class="py-3 px-4">Fecha</th>
-                            <th class="py-3 px-4">Solicitante / Cargo</th>
-                            <th id="thUbicacion" class="py-3 px-4">Colonia</th>
-                            <th class="py-3 px-4">Requerimiento</th>
-                            <th class="py-3 px-4">Clasificación</th>
-                            <th class="py-3 px-4">Estatus</th>
-                            <th class="py-3 px-4 text-center">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tablaRecepcionBody" class="divide-y divide-slate-100">
-                        <!-- Carga dinámica vía JS -->
-                    </tbody>
-                </table>
-            </div>
+            <!-- CONTENEDOR 2: TABLA DE CITAS AGENDADAS -->
+            <div id="seccionCitas" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hidden">
+                <div class="p-6 border-b border-slate-200 flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center">
+                        <i class="fa-solid fa-calendar-check text-teal-600 mr-2"></i> Citas Agendadas con Dirección General
+                    </h3>
+                    <button onclick="abrirModalCita()" class="px-4 py-2 bg-teal-700 text-white rounded-lg text-xs font-bold hover:bg-teal-800 transition-colors flex items-center shadow">
+                        <i class="fa-solid fa-calendar-plus mr-1.5"></i> Nueva Cita
+                    </button>
+                </div>
 
-            <div id="paginadorRecepcion" class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500 gap-3">
-                <!-- Paginador dinámico -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider border-b border-slate-200">
+                            <tr>
+                                <th class="py-3 px-4">Folio Cita</th>
+                                <th class="py-3 px-4">Fecha y Hora</th>
+                                <th class="py-3 px-4">Solicitante</th>
+                                <th class="py-3 px-4">Asunto</th>
+                                <th class="py-3 px-4">Estatus</th>
+                                <th class="py-3 px-4 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaCitasBody" class="divide-y divide-slate-100">
+                            <!-- Carga dinámica vía JS -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -330,13 +377,161 @@
         </div>
     </div>
 
+    <!-- Modal para Agendar Cita con Dirección General -->
+    <div id="modalAgendarCita" class="fixed inset-0 bg-slate-900 bg-opacity-60 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative transform transition-all">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-200 pb-3">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center">
+                    <i class="fa-solid fa-calendar-plus text-teal-600 mr-2"></i> Agendar Cita con Dirección General
+                </h3>
+                <button onclick="cerrarModalCita()" class="text-slate-400 hover:text-slate-600 text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="formCita" onsubmit="guardarCita(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Nombre del Solicitante *</label>
+                    <input type="text" id="citaNombre" placeholder="Nombre completo del ciudadano o representante" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm uppercase focus:ring-2 focus:ring-teal-500 focus:outline-none" required>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Fecha de la Cita *</label>
+                        <input type="date" id="citaFecha" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Hora de la Cita *</label>
+                        <input type="time" id="citaHora" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none" required>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Asunto / Motivo de la Cita *</label>
+                    <textarea id="citaAsunto" rows="2" placeholder="Describa brevemente el motivo de la audiencia..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm uppercase focus:ring-2 focus:ring-teal-500 focus:outline-none" required></textarea>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-3">
+                    <button type="button" onclick="cerrarModalCita()" class="px-4 py-2 bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl hover:bg-slate-300 transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-teal-700 text-white font-bold text-xs rounded-xl hover:bg-teal-800 transition-colors shadow-md">
+                        Agendar y Notificar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Editar Cita -->
+    <div id="modalEditarCita" class="fixed inset-0 bg-slate-900 bg-opacity-60 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative transform transition-all">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-200 pb-3">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center">
+                    <i class="fa-solid fa-pen-to-square text-teal-600 mr-2"></i> Editar Cita
+                </h3>
+                <button onclick="cerrarModalEditarCita()" class="text-slate-400 hover:text-slate-600 text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="formEditarCita" onsubmit="guardarEdicionCita(event)" class="space-y-4">
+                <input type="hidden" id="editCitaId">
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Nombre del Solicitante *</label>
+                    <input type="text" id="editCitaNombre" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm uppercase focus:ring-2 focus:ring-teal-500 focus:outline-none" required>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Fecha de la Cita *</label>
+                        <input type="date" id="editCitaFecha" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Hora de la Cita *</label>
+                        <input type="time" id="editCitaHora" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none" required>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Asunto / Motivo *</label>
+                    <textarea id="editCitaAsunto" rows="2" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm uppercase focus:ring-2 focus:ring-teal-500 focus:outline-none" required></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Estatus *</label>
+                    <select id="editCitaEstatus" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm uppercase focus:ring-2 focus:ring-teal-500 focus:outline-none" required>
+                        <option value="PROGRAMADA">PROGRAMADA</option>
+                        <option value="EN_ESPERA">EN ESPERA</option>
+                        <option value="ATENDIDA">ATENDIDA</option>
+                        <option value="CANCELADA">CANCELADA</option>
+                    </select>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-3">
+                    <button type="button" onclick="cerrarModalEditarCita()" class="px-4 py-2 bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl hover:bg-slate-300 transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-teal-700 text-white font-bold text-xs rounded-xl hover:bg-teal-800 transition-colors shadow-md">
+                        Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Contenedor para Notificaciones Flotantes (Toasts) -->
     <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col space-y-3 pointer-events-none"></div>
 
-    <!-- Script global de utilidades -->
+    <!-- Script de control de pestañas y modales -->
     <script>
+        // Función para alternar entre las pestañas de Solicitudes y Citas
+        function cambiarPestana(pestana) {
+            const seccionSolicitudes = document.getElementById('seccionSolicitudes');
+            const seccionCitas = document.getElementById('seccionCitas');
+            const btnSolicitudes = document.getElementById('tabBtnSolicitudes');
+            const btnCitas = document.getElementById('tabBtnCitas');
+
+            if (pestana === 'solicitudes') {
+                seccionSolicitudes.classList.remove('hidden');
+                seccionSolicitudes.classList.add('block');
+                seccionCitas.classList.remove('block');
+                seccionCitas.classList.add('hidden');
+
+                btnSolicitudes.className = "px-5 py-2.5 rounded-xl font-bold text-xs flex items-center space-x-2 transition-colors bg-emerald-700 text-white shadow";
+                btnCitas.className = "px-5 py-2.5 rounded-xl font-bold text-xs flex items-center space-x-2 transition-colors bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 shadow-sm";
+            } else {
+                seccionCitas.classList.remove('hidden');
+                seccionCitas.classList.add('block');
+                seccionSolicitudes.classList.remove('block');
+                seccionSolicitudes.classList.add('hidden');
+
+                btnCitas.className = "px-5 py-2.5 rounded-xl font-bold text-xs flex items-center space-x-2 transition-colors bg-teal-700 text-white shadow";
+                btnSolicitudes.className = "px-5 py-2.5 rounded-xl font-bold text-xs flex items-center space-x-2 transition-colors bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 shadow-sm";
+            }
+        }
+
         function cerrarModalCoincidencia() {
             document.getElementById('modalCoincidencia').classList.add('hidden');
+        }
+
+        function abrirModalCita() {
+            document.getElementById('modalAgendarCita').classList.remove('hidden');
+            const fechaInput = document.getElementById('citaFecha');
+            if (fechaInput && !fechaInput.value) {
+                fechaInput.valueAsDate = new Date();
+            }
+        }
+
+        function cerrarModalCita() {
+            document.getElementById('modalAgendarCita').classList.add('hidden');
+            const form = document.getElementById('formCita');
+            if (form) form.reset();
+        }
+
+        function cerrarModalEditarCita() {
+            document.getElementById('modalEditarCita').classList.add('hidden');
         }
 
         function cerrarSesion() {

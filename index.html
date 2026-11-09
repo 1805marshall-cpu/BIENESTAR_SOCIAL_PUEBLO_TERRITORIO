@@ -208,20 +208,30 @@
             const credencialesAdminTerritorio = { user: "admin.territorio@dif.gob.mx", pass: "territorio2026" };
 
             if (deptoActivo === 'bienestar') {
-                // Tarjeta 1: Recepción Bienestar Social (Permite Karla Bernal o correo institucional)
+                // Tarjeta 1: Recepción Bienestar Social (Karla Bernal, Mariana Antele o correo institucional)
                 if ((usuario === "karla.bernal" && pass === "Karlita123..") || 
+                    (usuario === "mariana.antele" && pass === "Marianita123..") || 
                     (usuario === "bienestar@dif.gob.mx" && pass === "bienestar2026")) {
                     
-                    localStorage.setItem('usuarioActivo', JSON.stringify({ nombre: usuario === "karla.bernal" ? 'Karla Bernal (Bienestar Social)' : 'Operador Bienestar Social', departamento: 'BIENESTAR SOCIAL 2026', rol: 'bienestar' }));
+                    let nombreOperador = 'Operador Bienestar Social';
+                    if (usuario === "karla.bernal") nombreOperador = 'Karla Bernal (Bienestar Social)';
+                    if (usuario === "mariana.antele") nombreOperador = 'Mariana Antele (Bienestar Social)';
+
+                    localStorage.setItem('usuarioActivo', JSON.stringify({ nombre: nombreOperador, departamento: 'BIENESTAR SOCIAL 2026', rol: 'bienestar' }));
                     window.location.href = 'recepcion/index.html';
                 } else { errorMsg.classList.remove('hidden'); }
 
             } else if (deptoActivo === 'territorio') {
-                // Tarjeta 2: Recepción Pueblo y Territorio (Permite Damaris Domínguez o correo institucional)
+                // Tarjeta 2: Recepción Pueblo y Territorio (Damaris Domínguez, Avril Gómez o correo institucional)
                 if ((usuario === "damaris.dominguez" && pass === "Damaris123..") || 
+                    (usuario === "avril.gomez" && pass === "Avril123") || 
                     (usuario === "territorio@dif.gob.mx" && pass === "territorio2026")) {
                     
-                    localStorage.setItem('usuarioActivo', JSON.stringify({ nombre: usuario === "damaris.dominguez" ? 'Damaris Domínguez (Pueblo y Territorio)' : 'Operador Pueblo y Territorio', departamento: 'PUEBLO Y TERRITORIO 2026', rol: 'territorio' }));
+                    let nombreOperador = 'Operador Pueblo y Territorio';
+                    if (usuario === "damaris.dominguez") nombreOperador = 'Damaris Domínguez (Pueblo y Territorio)';
+                    if (usuario === "avril.gomez") nombreOperador = 'Avril Gómez (Pueblo y Territorio)';
+
+                    localStorage.setItem('usuarioActivo', JSON.stringify({ nombre: nombreOperador, departamento: 'PUEBLO Y TERRITORIO 2026', rol: 'territorio' }));
                     window.location.href = 'recepcion/index.html';
                 } else { errorMsg.classList.remove('hidden'); }
 
@@ -243,6 +253,7 @@
                 } else { errorMsg.classList.remove('hidden'); }
             }
         }
+
     </script>
 </body>
 </html>

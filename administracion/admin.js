@@ -2,10 +2,12 @@
 import { db, collection, doc, updateDoc, deleteDoc, query, orderBy, onSnapshot } from '../js/firebase-config.js';
 
 let solicitudes = [];
+let listaCitasGlobal = [];
 let paginaActual = 1;
-const filasPorPagina = 10; // 👈 Estrictamente 10 filas por página
+const filasPorPagina = 10;
 let primerCargaCompletada = false;
 let sesionActual = null;
+let intervalAlertasCitas = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     sesionActual = JSON.parse(localStorage.getItem('usuarioActivo'));
@@ -37,7 +39,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window.mostrarNotificacion) window.mostrarNotificacion("Filtros restablecidos", "info");
     });
 
+    const inputFiltroCalendario = document.getElementById('filtroFechaCalendario');
+    if (inputFiltroCalendario) {
+        inputFiltroCalendario.addEventListener('change', (e) => {
+            filtrarCitasPorFecha(e.target.value);
+        });
+    }
+
+    // Escuchar datos en tiempo real de Firestore
     escucharSolicitudes();
+    escucharCitasAdmin();
+
+    // Iniciar verificador de alertas de reuniones
+    iniciarVerificadorCercaniaCitas();
 });
 
 function configurarCabeceraYFiltros() {
@@ -106,6 +120,113 @@ function escucharSolicitudes() {
     });
 }
 
+function escucharCitasAdmin() {
+    const q = query(collection(db, "citas"), orderBy("fechaCita", "asc"));
+    onSnapshot(q, (snapshot) => {
+        listaCitasGlobal = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        const badge = document.getElementById('badgeTotalCitas');
+        if (badge) badge.textContent = listaCitasGlobal.length;
+        
+        poblarResumenFechas();
+        verificarCercaniaCitasLogica();
+    });
+}
+
+// --- SISTEMA DE ALERTAS AUTOMÁTICAS USANDO MOSTRARNOTIFICACION ---
+function iniciarVerificadorCercaniaCitas() {
+    if (intervalAlertasCitas) clearInterval(intervalAlertasCitas);
+
+    // Revisar de inmediato al abrir la sesión o página
+    verificarCercaniaCitasLogica();
+
+    // Programar la revisión cada 60 segundos
+    intervalAlertasCitas = setInterval(verificarCercaniaCitasLogica, 60000);
+}
+
+function verificarCercaniaCitasLogica() {
+    const ahora = new Date();
+    const contenedorBarra = document.getElementById('barraAlertaReunion');
+    if (!contenedorBarra) return;
+
+    let citaUrgenteActiva = null;
+    let tipoAlerta = '';
+
+    listaCitasGlobal.forEach(c => {
+        if (!c.fechaCita || !c.horaCita) return;
+        // Si ya fue atendida o cancelada, la ignoramos por completo
+        if (c.estatus === 'CANCELADA' || c.estatus === 'ATENDIDA') return;
+
+        const [anio, mes, dia] = c.fechaCita.split('-');
+        const [hora, min] = c.horaCita.split(':');
+        const fechaHoraCita = new Date(anio, mes - 1, dia, hora, min);
+
+        const diferenciaMinutos = (fechaHoraCita - ahora) / (1000 * 60);
+
+        if (diferenciaMinutos > -60 && diferenciaMinutos <= 30) {
+            citaUrgenteActiva = { ...c, minutosRestantes: Math.round(diferenciaMinutos) };
+            tipoAlerta = 'urgente';
+        } else if (diferenciaMinutos > 30 && diferenciaMinutos <= 60 && !citaUrgenteActiva) {
+            citaUrgenteActiva = { ...c, minutosRestantes: Math.round(diferenciaMinutos) };
+            tipoAlerta = 'preventiva';
+        }
+    });
+
+    if (citaUrgenteActiva) {
+        if (tipoAlerta === 'urgente') {
+            const tiempoTexto = citaUrgenteActiva.minutosRestantes <= 0 ? 
+                '¡La reunión es en este momento!' : 
+                `inicia en <b>${citaUrgenteActiva.minutosRestantes} minutos</b>`;
+
+            contenedorBarra.className = "max-w-7xl mx-auto px-4 w-full mt-4 block";
+            contenedorBarra.innerHTML = `
+                <div class="bg-rose-700 text-white p-4 rounded-2xl shadow-xl border-2 border-rose-900 flex flex-col md:flex-row justify-between items-center space-y-3 md:space-y-0">
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-triangle-exclamation text-2xl animate-pulse"></i>
+                        <div>
+                            <h4 class="text-xs font-black uppercase tracking-wider">¡Reunión Inminente!</h4>
+                            <p class="text-xs mt-0.5">Cita con <b>${citaUrgenteActiva.nombreSolicitante}</b> (${citaUrgenteActiva.horaCita} hrs) - ${tiempoTexto}.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="marcarCitaAtendida('${citaUrgenteActiva.id}', '${citaUrgenteActiva.nombreSolicitante}')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition-colors flex items-center">
+                            <i class="fa-solid fa-check mr-1.5"></i> Confirmar Asistencia
+                        </button>
+                        <button onclick="abrirModalCalendario()" class="px-3 py-2 bg-white text-rose-700 hover:bg-rose-50 font-bold text-xs rounded-xl shadow transition-colors">
+                            Ver Agenda
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else {
+            contenedorBarra.className = "max-w-7xl mx-auto px-4 w-full mt-4 block";
+            contenedorBarra.innerHTML = `
+                <div class="bg-amber-600 text-white p-4 rounded-2xl shadow-lg border border-amber-700 flex flex-col md:flex-row justify-between items-center space-y-3 md:space-y-0">
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-clock text-2xl"></i>
+                        <div>
+                            <h4 class="text-xs font-black uppercase tracking-wider">Aviso de Agenda Próxima</h4>
+                            <p class="text-xs mt-0.5">Reunión con <b>${citaUrgenteActiva.nombreSolicitante}</b> a las <b>${citaUrgenteActiva.horaCita} hrs</b> (Falta aprox. 1 hora).</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="marcarCitaAtendida('${citaUrgenteActiva.id}', '${citaUrgenteActiva.nombreSolicitante}')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition-colors flex items-center">
+                            <i class="fa-solid fa-check mr-1.5"></i> Confirmar Asistencia
+                        </button>
+                        <button onclick="abrirModalCalendario()" class="px-3 py-2 bg-white text-amber-700 hover:bg-amber-50 font-bold text-xs rounded-xl shadow transition-colors">
+                            Ver Agenda
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+    } else {
+        contenedorBarra.className = "hidden max-w-7xl mx-auto px-4 w-full mt-4";
+        contenedorBarra.innerHTML = "";
+    }
+}
+
+
 function actualizarKPIs() {
     const gestionFiltro = obtenerGestionFiltroActiva();
     const listaFiltrada = solicitudes.filter(s => !gestionFiltro || s.tipoGestion === gestionFiltro);
@@ -152,7 +273,6 @@ function renderizarTabla() {
         return cumpleGestion && cumpleBusqueda && cumpleEstatus && cumpleFecha;
     });
 
-    // Paginación estricta de 10 en 10
     const inicio = (paginaActual - 1) * filasPorPagina;
     const fin = inicio + filasPorPagina;
     const paginados = filtrados.slice(inicio, fin);
@@ -204,6 +324,97 @@ function obtenerBadgeEstatus(status) {
     };
     return `<span class="${colores[estado] || 'bg-slate-100 text-slate-800'} px-2.5 py-1 rounded-full font-bold text-[10px] shadow-sm">${estado}</span>`;
 }
+
+// --- FUNCIONES DEL CALENDARIO FLOTANTE Y AGENDA DE CITAS ---
+
+function poblarResumenFechas() {
+    const contenedor = document.getElementById('listaResumenFechas');
+    if (!contenedor) return;
+
+    if (listaCitasGlobal.length === 0) {
+        contenedor.innerHTML = `<p class="text-[11px] text-slate-400 text-center py-4">No hay citas registradas.</p>`;
+        return;
+    }
+
+    contenedor.innerHTML = listaCitasGlobal.map(c => {
+        const colorEstado = calcularColorTiempo(c.fechaCita, c.horaCita, c.estatus);
+        return `
+            <div onclick="filtrarCitasPorFecha('${c.fechaCita}')" class="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-teal-50 cursor-pointer transition-colors flex items-center justify-between shadow-sm">
+                <div class="flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full ${colorEstado}"></span>
+                    <div>
+                        <p class="text-xs font-bold text-slate-800">${c.fechaCita}</p>
+                        <p class="text-[10px] text-slate-500 truncate max-w-[120px]">${c.nombreSolicitante}</p>
+                    </div>
+                </div>
+                <span class="text-[10px] font-mono font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">${c.horaCita || '--:--'}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+function calcularColorTiempo(fechaCita, horaCita, estatus) {
+    if (estatus === 'CANCELADA' || estatus === 'ATENDIDA') return 'bg-slate-400';
+    
+    const ahora = new Date();
+    const [anio, mes, dia] = fechaCita.split('-');
+    const [hora, min] = (horaCita || '00:00').split(':');
+    const fechaHoraCita = new Date(anio, mes - 1, dia, hora, min);
+
+    const diferenciaHoras = (fechaHoraCita - ahora) / (1000 * 60 * 60);
+
+    if (diferenciaHoras < 0) {
+        return 'bg-rose-500 animate-pulse';
+    } else if (diferenciaHoras <= 24) {
+        return 'bg-amber-500';
+    } else {
+        return 'bg-emerald-500';
+    }
+}
+
+window.filtrarCitasPorFecha = (fechaSeleccionada) => {
+    const contenedor = document.getElementById('contenedorCitasDia');
+    const titulo = document.getElementById('tituloDetalleFecha');
+    const contador = document.getElementById('contadorCitasDia');
+    
+    const filtradas = listaCitasGlobal.filter(c => c.fechaCita === fechaSeleccionada);
+    
+    if (titulo) titulo.innerHTML = `<span>Citas para el: ${fechaSeleccionada}</span>`;
+    if (contador) contador.textContent = `${filtradas.length} citas`;
+
+    if (filtradas.length === 0) {
+        contenedor.innerHTML = `<p class="text-xs text-slate-400 text-center py-10">No hay citas agendadas para esta fecha.</p>`;
+        return;
+    }
+
+    contenedor.innerHTML = filtradas.map(c => `
+        <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-2 shadow-sm">
+            <div class="flex justify-between items-start">
+                <div>
+                    <span class="text-[10px] font-mono font-bold text-teal-800 bg-teal-100 px-2 py-0.5 rounded">${c.folio}</span>
+                    <h5 class="text-xs font-bold text-slate-800 mt-1">${c.nombreSolicitante}</h5>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs font-bold text-slate-700 bg-white border border-slate-200 px-2.5 py-1 rounded-lg shadow-sm">${c.horaCita || '--:--'} hrs</span>
+                    <span class="block text-[10px] font-bold mt-1 text-slate-500 uppercase">${c.estatus || 'PROGRAMADA'}</span>
+                </div>
+            </div>
+            <p class="text-xs text-slate-600 bg-white p-2.5 rounded-xl border border-slate-200">
+                <strong class="text-slate-700">Asunto:</strong> ${c.asunto || 'Sin especificar'}
+            </p>
+            <p class="text-[10px] text-slate-400 italic">Agendado por: ${c.agendadoPor || 'Recepción'}</p>
+        </div>
+    `).join('');
+};
+
+window.cargarCitasHoy = () => {
+    const hoy = new Date().toISOString().split('T')[0];
+    const inputFecha = document.getElementById('filtroFechaCalendario');
+    if (inputFecha) inputFecha.value = hoy;
+    filtrarCitasPorFecha(hoy);
+};
+
+// --- FIN FUNCIONES DEL CALENDARIO ---
 
 window.abrirModalDictamen = (id) => {
     const solicitud = solicitudes.find(s => s.id === id);
@@ -269,4 +480,29 @@ function renderizarPaginador(totalItems) {
 window.cambiarPagina = (nuevaPagina) => {
     paginaActual = nuevaPagina;
     renderizarTabla();
+};
+
+window.marcarCitaAtendida = async (idCita, nombre) => {
+    if (confirm(`¿Confirma que el ciudadano ${nombre} asistió y la reunión ha sido atendida?`)) {
+        try {
+            const citaRef = doc(db, "citas", idCita);
+            await updateDoc(citaRef, { estatus: "ATENDIDA" });
+            
+            if (window.mostrarNotificacion) {
+                window.mostrarNotificacion(`✅ Asistencia confirmada para ${nombre}. Reunión marcada como atendida.`, "success");
+            }
+            
+            // Ocultar la barra de inmediato
+            const barra = document.getElementById('barraAlertaReunion');
+            if (barra) {
+                barra.className = "hidden max-w-7xl mx-auto px-4 w-full mt-4";
+                barra.innerHTML = "";
+            }
+        } catch (error) {
+            console.error("Error al actualizar la cita:", error);
+            if (window.mostrarNotificacion) {
+                window.mostrarNotificacion("❌ Error al registrar la asistencia", "error");
+            }
+        }
+    }
 };

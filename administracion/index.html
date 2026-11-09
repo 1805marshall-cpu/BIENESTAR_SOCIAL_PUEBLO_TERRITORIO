@@ -34,6 +34,11 @@
         </div>
     </header>
 
+    <!-- Barra de Alerta Permanente de Reuniones Próximas -->
+    <div id="barraAlertaReunion" class="hidden max-w-7xl mx-auto px-4 w-full mt-4">
+        <!-- El diseño y contenido dinámico se inyectan aquí -->
+    </div>
+
     <main class="max-w-7xl mx-auto px-4 py-8 w-full flex-grow space-y-6">
 
         <!-- 1. Tarjetas de KPIs -->
@@ -166,6 +171,88 @@
 
     </main>
 
+    <!-- Botón Flotante para Abrir el Calendario de Citas -->
+    <div class="fixed bottom-6 left-6 z-40">
+        <button onclick="abrirModalCalendario()" class="bg-teal-700 hover:bg-teal-800 text-white p-4 rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-110 group relative" title="Ver Calendario de Citas">
+            <i class="fa-solid fa-calendar-days text-xl"></i>
+            <span class="absolute -top-1 -right-1 bg-rose-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow" id="badgeTotalCitas">0</span>
+        </button>
+    </div>
+
+    <!-- Modal Calendario Grande e Interactivo -->
+    <div id="modalCalendarioCitas" class="fixed inset-0 bg-slate-900 bg-opacity-70 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl max-w-4xl w-full p-6 shadow-2xl border border-slate-200 relative flex flex-col max-h-[90vh]">
+            
+            <!-- Header del Modal -->
+            <div class="flex justify-between items-center mb-4 border-b border-slate-200 pb-3">
+                <div class="flex items-center space-x-2">
+                    <div class="bg-teal-100 text-teal-800 p-2 rounded-xl">
+                        <i class="fa-solid fa-calendar-days text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800">Agenda de Citas - Dirección General</h3>
+                        <p class="text-xs text-slate-500">Monitoreo y control de tiempos de audiencia</p>
+                    </div>
+                </div>
+                <button onclick="cerrarModalCalendario()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Leyenda de Colores de Tiempos -->
+            <div class="flex flex-wrap items-center gap-4 bg-slate-50 p-3 rounded-xl mb-4 text-xs font-semibold text-slate-700 border border-slate-200">
+                <span class="text-slate-500 font-bold">Leyenda de Tiempos:</span>
+                <div class="flex items-center space-x-1.5"><span class="w-3 h-3 rounded-full bg-rose-500"></span><span>Vencida / En curso hoy</span></div>
+                <div class="flex items-center space-x-1.5"><span class="w-3 h-3 rounded-full bg-amber-500"></span><span>Menos de 24 hrs</span></div>
+                <div class="flex items-center space-x-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500"></span><span>Próxima (Con tiempo)</span></div>
+                <div class="flex items-center space-x-1.5"><span class="w-3 h-3 rounded-full bg-slate-400"></span><span>Atendida / Cancelada</span></div>
+            </div>
+
+            <!-- Contenido Dinámico del Calendario / Lista por Fecha -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 overflow-y-auto flex-grow p-1">
+                
+                <!-- Columna Izquierda: Selector de Fecha -->
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col justify-between">
+                    <div>
+                        <h4 class="text-xs font-bold uppercase text-slate-600 mb-3 flex items-center justify-between">
+                            <span>Filtrar por Fecha</span>
+                            <input type="date" id="filtroFechaCalendario" class="border border-slate-300 rounded-lg p-1 text-xs bg-white">
+                        </h4>
+                        <div id="listaResumenFechas" class="space-y-2 max-h-72 overflow-y-auto pr-1">
+                            <!-- Se llena dinámicamente con las citas -->
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-200 text-center">
+                        <button onclick="cargarCitasHoy()" class="w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs transition-colors">
+                            Ver Citas de Hoy
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Columna Derecha: Detalle de Citas del Día Seleccionado -->
+                <div class="md:col-span-2 border border-slate-200 rounded-2xl p-4 flex flex-col bg-white">
+                    <h4 id="tituloDetalleFecha" class="text-sm font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 flex items-center justify-between">
+                        <span>Selecciona una fecha o cita</span>
+                        <span class="text-xs bg-teal-50 text-teal-700 px-2.5 py-0.5 rounded-full font-bold" id="contadorCitasDia">0 citas</span>
+                    </h4>
+                    
+                    <div id="contenedorCitasDia" class="space-y-3 overflow-y-auto flex-grow max-h-96 pr-1">
+                        <p class="text-xs text-slate-400 text-center py-10">Haz clic en una fecha o filtro para ver los detalles de los ciudadanos.</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer del Modal -->
+            <div class="flex justify-end pt-4 border-t border-slate-200 mt-4">
+                <button onclick="cerrarModalCalendario()" class="px-5 py-2 bg-slate-800 text-white font-bold text-xs rounded-xl hover:bg-slate-900 transition-colors">
+                    Cerrar Calendario
+                </button>
+            </div>
+
+        </div>
+    </div>
+
     <!-- Modal Dictamen -->
     <div id="modalDictamen" class="fixed inset-0 bg-slate-900 bg-opacity-60 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative transform transition-all">
@@ -211,6 +298,17 @@
         function cerrarSesion() {
             localStorage.removeItem('usuarioActivo');
             window.location.href = '../index.html';
+        }
+
+        function abrirModalCalendario() {
+            document.getElementById('modalCalendarioCitas').classList.remove('hidden');
+            const hoy = new Date().toISOString().split('T')[0];
+            const inputFecha = document.getElementById('filtroFechaCalendario');
+            if (inputFecha) inputFecha.value = hoy;
+        }
+
+        function cerrarModalCalendario() {
+            document.getElementById('modalCalendarioCitas').classList.add('hidden');
         }
 
         window.mostrarNotificacion = function(mensaje, tipo = 'success') {

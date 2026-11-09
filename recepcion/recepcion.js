@@ -2,6 +2,7 @@
 import { db, collection, addDoc, doc, updateDoc, deleteDoc, query, orderBy, onSnapshot, serverTimestamp } from '../js/firebase-config.js';
 
 let solicitudes = [];
+let listaCitas = [];
 let paginaActual = 1;
 const filasPorPagina = 10;
 let sesionActual = null;
@@ -50,8 +51,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (contenedorPrioridad) contenedorPrioridad.style.display = "none";
     }
 
-    // Escuchar datos en tiempo real de Firestore
+    // Escuchar datos en tiempo real de Firestore (Solicitudes y Citas)
     escucharSolicitudes();
+    escucharCitas();
 
     // Guardar Petición
     if (form) {
@@ -148,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Listener en Tiempo Real de Firestore
+// Listener en Tiempo Real de Solicitudes Firestore
 function escucharSolicitudes() {
     const q = query(collection(db, "solicitudes"), orderBy("createdAt", "desc"));
     onSnapshot(q, (snapshot) => {
@@ -156,6 +158,43 @@ function escucharSolicitudes() {
         actualizarDatalistsInteligentes();
         renderizarTabla();
     });
+}
+
+// Listener en Tiempo Real de Citas Firestore
+function escucharCitas() {
+    const q = query(collection(db, "citas"), orderBy("createdAt", "desc"));
+    onSnapshot(q, (snapshot) => {
+        listaCitas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderizarTablaCitas();
+    });
+}
+
+// Renderizado de Tabla de Citas
+function renderizarTablaCitas() {
+    const tbody = document.getElementById('tablaCitasBody');
+    if (!tbody) return;
+
+    tbody.innerHTML = listaCitas.map(c => `
+        <tr class="hover:bg-slate-50">
+            <td class="py-3 px-4 font-mono font-bold text-teal-800">${c.folio || 'S/F'}</td>
+            <td class="py-3 px-4">${c.fechaCita || '--'} <br><span class="text-[10px] text-slate-500">${c.horaCita || '--'} hrs</span></td>
+            <td class="py-3 px-4 font-bold text-slate-800">${c.nombreSolicitante || ''}</td>
+            <td class="py-3 px-4">${c.asunto || ''}</td>
+            <td class="py-3 px-4">
+                <span class="px-2.5 py-1 rounded-full font-bold text-[10px] bg-teal-100 text-teal-800 border border-teal-300">
+                    ${c.estatus || 'PROGRAMADA'}
+                </span>
+            </td>
+            <td class="py-3 px-4 text-center space-x-2">
+                <button onclick="abrirModalEditarCita('${c.id}')" class="text-blue-600 hover:text-blue-800 font-bold p-1" title="Editar Cita">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button onclick="eliminarCita('${c.id}', '${c.folio || 'S/F'}')" class="text-rose-600 hover:text-rose-800 font-bold p-1" title="Eliminar Cita">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
 }
 
 // Retroalimentar dinámicamente Clasificaciones, Rutas y Prioridades
@@ -326,14 +365,12 @@ window.abrirModalEditar = (id) => {
     const solicitud = solicitudes.find(s => s.id === id);
     if (!solicitud) return;
 
-    // Asignar cada propiedad de la solicitud a su campo respectivo en el modal
     document.getElementById('editId').value = solicitud.id;
     document.getElementById('editFolio').value = solicitud.folio || '';
     document.getElementById('editFecha').value = solicitud.fecha || '';
     document.getElementById('editNombre').value = solicitud.nombre || '';
-    document.getElementById('editCargo').value = solicitud.cargo || 'CIUDADANO';
+    document.getElementById('editCargo').value = solicitud.cargo || '';
     
-    // Gestionar dinámicamente si corresponde a Colonia (Bienestar) o Localidad (Territorio)
     const labelEditUbi = document.getElementById('editLabelUbi');
     const inputEditColonia = document.getElementById('editColonia');
     if (solicitud.colonia !== undefined) {
@@ -359,7 +396,6 @@ window.abrirModalEditar = (id) => {
 
     document.getElementById('editDetalles').value = solicitud.detalles || '';
 
-    // Mostrar modal
     document.getElementById('modalEditar').classList.remove('hidden');
 };
 
@@ -371,10 +407,9 @@ window.guardarEdicion = async (e) => {
     e.preventDefault();
     const id = document.getElementById('editId').value;
     
-    // Recopilar todos los valores modificados del formulario del modal
     const fecha = document.getElementById('editFecha').value;
     const nombre = document.getElementById('editNombre').value.toUpperCase().trim();
-    const cargo = document.getElementById('editCargo').value;
+    const cargo = document.getElementById('editCargo').value.toUpperCase().trim();
     const valorUbicacion = document.getElementById('editColonia').value.toUpperCase().trim();
     const referencias = document.getElementById('editReferencias').value.trim() || 'S/N';
     const clasificacion = document.getElementById('editClasificacion').value.toUpperCase().trim();
@@ -393,7 +428,6 @@ window.guardarEdicion = async (e) => {
         detalles
     };
 
-    // Actualizar colonia o localidad y prioridad según corresponda al registro original
     const solicitudOriginal = solicitudes.find(s => s.id === id);
     if (solicitudOriginal && solicitudOriginal.colonia !== undefined) {
         datosActualizados.colonia = valorUbicacion;
@@ -419,6 +453,104 @@ window.guardarEdicion = async (e) => {
             window.mostrarNotificacion("❌ No se pudo actualizar el registro", "error");
         } else {
             alert("❌ No se pudo actualizar el registro.");
+        }
+    }
+};
+
+// Función para guardar y notificar nuevas citas hacia Dirección General
+window.guardarCita = async (e) => {
+    e.preventDefault();
+
+    const nombreVal = document.getElementById('citaNombre').value.toUpperCase().trim();
+    const fechaVal = document.getElementById('citaFecha').value;
+    const horaVal = document.getElementById('citaHora').value;
+    const asuntoVal = document.getElementById('citaAsunto').value.toUpperCase().trim();
+
+    const nuevaCita = {
+        folio: `CTA-${Date.now().toString().slice(-4)}`,
+        nombreSolicitante: nombreVal,
+        fechaCita: fechaVal,
+        horaCita: horaVal,
+        asunto: asuntoVal,
+        estatus: 'PROGRAMADA',
+        agendadoPor: sesionActual ? sesionActual.nombre : 'Recepción',
+        createdAt: serverTimestamp()
+    };
+
+    try {
+        await addDoc(collection(db, "citas"), nuevaCita);
+        if (window.mostrarNotificacion) {
+            window.mostrarNotificacion("✅ Cita agendada correctamente y notificada a Dirección General", "success");
+        } else {
+            alert("✅ Cita agendada correctamente y notificada a Dirección General.");
+        }
+        document.getElementById('formCita').reset();
+        cerrarModalCita();
+    } catch (error) {
+        console.error("Error al agendar cita:", error);
+        if (window.mostrarNotificacion) {
+            window.mostrarNotificacion("❌ No se pudo agendar la cita", "error");
+        } else {
+            alert("❌ No se pudo agendar la cita.");
+        }
+    }
+};
+
+// Funciones para Editar y Eliminar Citas
+window.abrirModalEditarCita = (id) => {
+    const cita = listaCitas.find(c => c.id === id);
+    if (!cita) return;
+
+    document.getElementById('editCitaId').value = cita.id;
+    document.getElementById('editCitaNombre').value = cita.nombreSolicitante || '';
+    document.getElementById('editCitaFecha').value = cita.fechaCita || '';
+    document.getElementById('editCitaHora').value = cita.horaCita || '';
+    document.getElementById('editCitaAsunto').value = cita.asunto || '';
+    document.getElementById('editCitaEstatus').value = cita.estatus || 'PROGRAMADA';
+
+    document.getElementById('modalEditarCita').classList.remove('hidden');
+};
+
+window.guardarEdicionCita = async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('editCitaId').value;
+
+    const datosActualizados = {
+        nombreSolicitante: document.getElementById('editCitaNombre').value.toUpperCase().trim(),
+        fechaCita: document.getElementById('editCitaFecha').value,
+        horaCita: document.getElementById('editCitaHora').value,
+        asunto: document.getElementById('editCitaAsunto').value.toUpperCase().trim(),
+        estatus: document.getElementById('editCitaEstatus').value
+    };
+
+    try {
+        const docRef = doc(db, "citas", id);
+        await updateDoc(docRef, datosActualizados);
+        
+        if (window.mostrarNotificacion) {
+            window.mostrarNotificacion("✅ Cita actualizada correctamente", "success");
+        } else {
+            alert("✅ Cita actualizada correctamente.");
+        }
+        cerrarModalEditarCita();
+    } catch (error) {
+        console.error("Error al actualizar cita:", error);
+        alert("❌ Ocurrió un error al actualizar la cita.");
+    }
+};
+
+window.eliminarCita = async (id, folio) => {
+    if (confirm(`¿Estás seguro de eliminar la cita con folio ${folio}?`)) {
+        try {
+            await deleteDoc(doc(db, "citas", id));
+            if (window.mostrarNotificacion) {
+                window.mostrarNotificacion("🗑️ Cita eliminada correctamente", "info");
+            } else {
+                alert("🗑️ Cita eliminada correctamente.");
+            }
+        } catch (error) {
+            console.error("Error al eliminar cita:", error);
+            alert("❌ Ocurrió un error al eliminar la cita.");
         }
     }
 };
