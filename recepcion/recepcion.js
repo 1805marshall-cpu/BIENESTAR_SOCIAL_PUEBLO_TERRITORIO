@@ -5,6 +5,7 @@ let solicitudes = [];
 let paginaActual = 1;
 const filasPorPagina = 10;
 let sesionActual = null;
+let ultimosFiltrados = []; // Almacena temporalmente el resultado actual del filtro para la impresión
 
 document.addEventListener('DOMContentLoaded', () => {
     // Validar sesión activa
@@ -186,7 +187,8 @@ function renderizarTabla() {
 
     const busqueda = document.getElementById('buscarRecepcion')?.value.toLowerCase() || '';
     
-    const filtrados = solicitudes.filter(s => {
+    // Almacenamos el resultado filtrado en la variable global para la impresión
+    ultimosFiltrados = solicitudes.filter(s => {
         const perteneceDepto = sesionActual.rol === 'bienestar' 
             ? s.tipoGestion?.includes('BIENESTAR') 
             : s.tipoGestion?.includes('PUEBLO');
@@ -204,7 +206,7 @@ function renderizarTabla() {
 
     const inicio = (paginaActual - 1) * filasPorPagina;
     const fin = inicio + filasPorPagina;
-    const paginados = filtrados.slice(inicio, fin);
+    const paginados = ultimosFiltrados.slice(inicio, fin);
 
     tbody.innerHTML = paginados.map(s => {
         const ubi = s.colonia || s.localidad || 'N/D';
@@ -232,8 +234,81 @@ function renderizarTabla() {
         `;
     }).join('');
 
-    renderizarPaginador(filtrados.length);
+    renderizarPaginador(ultimosFiltrados.length);
 }
+
+// Función Global para Imprimir lo Filtrado
+window.imprimirFiltrados = () => {
+    if (!ultimosFiltrados || ultimosFiltrados.length === 0) {
+        alert("No hay registros filtrados para imprimir.");
+        return;
+    }
+
+    const ventanaImpresion = window.open('', '_blank');
+    const tituloDepto = sesionActual.departamento || 'REPORTE DE SOLICITUDES';
+
+    let contenidoHTML = `
+        <html>
+        <head>
+            <title>Reporte de Solicitudes - ${tituloDepto}</title>
+            <style>
+                body { font-family: Arial, sans-serif; font-size: 11px; color: #333; margin: 20px; }
+                h2 { text-align: center; margin-bottom: 5px; color: #065f46; }
+                p { text-align: center; margin-top: 0; color: #666; font-size: 10px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+                th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; }
+                th { background-color: #f1f5f9; color: #1e293b; font-weight: bold; }
+                tr:nth-child(even) { background-color: #f8fafc; }
+            </style>
+        </head>
+        <body>
+            <h2>SISTEMA MUNICIPAL DIF - SAN ANDRÉS TUXTLA</h2>
+            <p>Reporte filtrado: ${tituloDepto} | Fecha de impresión: ${new Date().toLocaleDateString('es-MX')}</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Folio</th>
+                        <th>Fecha</th>
+                        <th>Solicitante / Cargo</th>
+                        <th>Ubicación</th>
+                        <th>Requerimiento</th>
+                        <th>Clasificación</th>
+                        <th>Estatus</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    ultimosFiltrados.forEach(s => {
+        const ubi = s.colonia || s.localidad || 'N/D';
+        contenidoHTML += `
+            <tr>
+                <td><b>${s.folio || 'S/F'}</b></td>
+                <td>${s.fecha || '--'}</td>
+                <td>${s.nombre || ''} (${s.cargo || ''})</td>
+                <td>${ubi}</td>
+                <td>${s.requerimiento || ''}</td>
+                <td>${s.clasificacion || ''}</td>
+                <td><b>${s.status || 'PENDIENTE'}</b></td>
+            </tr>
+        `;
+    });
+
+    contenidoHTML += `
+                </tbody>
+            </table>
+        </body>
+        </html>
+    `;
+
+    ventanaImpresion.document.write(contenidoHTML);
+    ventanaImpresion.document.close();
+    ventanaImpresion.focus();
+    setTimeout(() => {
+        ventanaImpresion.print();
+        ventanaImpresion.close();
+    }, 500);
+};
 
 function obtenerBadgeEstatus(status) {
     const estado = (status || 'PENDIENTE').toUpperCase();
@@ -246,18 +321,45 @@ function obtenerBadgeEstatus(status) {
     return `<span class="${colores[estado] || 'bg-slate-100 text-slate-800'} px-2.5 py-1 rounded-full font-bold text-[10px] shadow-sm">${estado}</span>`;
 }
 
-// Funciones Globales para Editar y Eliminar
+// Funciones Globales para Cargar y Guardar la Edición Completa de Todos los Campos
 window.abrirModalEditar = (id) => {
     const solicitud = solicitudes.find(s => s.id === id);
     if (!solicitud) return;
 
+    // Asignar cada propiedad de la solicitud a su campo respectivo en el modal
     document.getElementById('editId').value = solicitud.id;
     document.getElementById('editFolio').value = solicitud.folio || '';
+    document.getElementById('editFecha').value = solicitud.fecha || '';
     document.getElementById('editNombre').value = solicitud.nombre || '';
-    document.getElementById('editRequerimiento').value = solicitud.requerimiento || '';
+    document.getElementById('editCargo').value = solicitud.cargo || 'CIUDADANO';
+    
+    // Gestionar dinámicamente si corresponde a Colonia (Bienestar) o Localidad (Territorio)
+    const labelEditUbi = document.getElementById('editLabelUbi');
+    const inputEditColonia = document.getElementById('editColonia');
+    if (solicitud.colonia !== undefined) {
+        if (labelEditUbi) labelEditUbi.textContent = "Colonia *";
+        inputEditColonia.value = solicitud.colonia || '';
+    } else {
+        if (labelEditUbi) labelEditUbi.textContent = "Localidad *";
+        inputEditColonia.value = solicitud.localidad || '';
+    }
+
+    document.getElementById('editReferencias').value = solicitud.referencias || '';
     document.getElementById('editClasificacion').value = solicitud.clasificacion || '';
+    document.getElementById('editRequerimiento').value = solicitud.requerimiento || '';
+    document.getElementById('editRuta').value = solicitud.ruta || '';
+    
+    const contenedorPrioridadEdit = document.getElementById('editContainerPrioridad');
+    if (solicitud.prioridad !== undefined) {
+        if (contenedorPrioridadEdit) contenedorPrioridadEdit.style.display = "block";
+        document.getElementById('editPrioridad').value = solicitud.prioridad || '';
+    } else {
+        if (contenedorPrioridadEdit) contenedorPrioridadEdit.style.display = "none";
+    }
+
     document.getElementById('editDetalles').value = solicitud.detalles || '';
 
+    // Mostrar modal
     document.getElementById('modalEditar').classList.remove('hidden');
 };
 
@@ -268,25 +370,56 @@ window.cerrarModalEditar = () => {
 window.guardarEdicion = async (e) => {
     e.preventDefault();
     const id = document.getElementById('editId').value;
+    
+    // Recopilar todos los valores modificados del formulario del modal
+    const fecha = document.getElementById('editFecha').value;
     const nombre = document.getElementById('editNombre').value.toUpperCase().trim();
-    const requerimiento = document.getElementById('editRequerimiento').value.toUpperCase().trim();
+    const cargo = document.getElementById('editCargo').value;
+    const valorUbicacion = document.getElementById('editColonia').value.toUpperCase().trim();
+    const referencias = document.getElementById('editReferencias').value.trim() || 'S/N';
     const clasificacion = document.getElementById('editClasificacion').value.toUpperCase().trim();
+    const requerimiento = document.getElementById('editRequerimiento').value.toUpperCase().trim();
+    const ruta = document.getElementById('editRuta').value.toUpperCase().trim();
     const detalles = document.getElementById('editDetalles').value.trim();
+
+    const datosActualizados = {
+        fecha,
+        nombre,
+        cargo,
+        referencias,
+        clasificacion,
+        requerimiento,
+        ruta,
+        detalles
+    };
+
+    // Actualizar colonia o localidad y prioridad según corresponda al registro original
+    const solicitudOriginal = solicitudes.find(s => s.id === id);
+    if (solicitudOriginal && solicitudOriginal.colonia !== undefined) {
+        datosActualizados.colonia = valorUbicacion;
+        const inputPrioridadEdit = document.getElementById('editPrioridad');
+        datosActualizados.prioridad = inputPrioridadEdit ? inputPrioridadEdit.value.toUpperCase().trim() || 'NORMAL' : 'NORMAL';
+    } else {
+        datosActualizados.localidad = valorUbicacion;
+    }
 
     try {
         const docRef = doc(db, "solicitudes", id);
-        await updateDoc(docRef, {
-            nombre,
-            requerimiento,
-            clasificacion,
-            detalles
-        });
+        await updateDoc(docRef, datosActualizados);
 
-        alert("✅ Solicitud actualizada correctamente.");
+        if (window.mostrarNotificacion) {
+            window.mostrarNotificacion("✅ Solicitud actualizada completamente", "success");
+        } else {
+            alert("✅ Solicitud actualizada completamente.");
+        }
         cerrarModalEditar();
     } catch (error) {
         console.error("Error al actualizar:", error);
-        alert("❌ No se pudo actualizar el registro.");
+        if (window.mostrarNotificacion) {
+            window.mostrarNotificacion("❌ No se pudo actualizar el registro", "error");
+        } else {
+            alert("❌ No se pudo actualizar el registro.");
+        }
     }
 };
 

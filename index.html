@@ -202,29 +202,31 @@
             const pass = document.getElementById('loginPassword').value.trim();
             const errorMsg = document.getElementById('errorMsg');
 
-            // Credenciales institucionales unificadas por módulo y rol
-            const credencialesBienestarRecep = { user: "bienestar@dif.gob.mx", pass: "bienestar2026" };
-            const credencialesTerritorioRecep = { user: "territorio@dif.gob.mx", pass: "territorio2026" };
+            // Credenciales institucionales autorizadas
+            const credencialesSuper           = { user: "angel.vidal", pass: "Angel123.." };
             const credencialesAdminBienestar  = { user: "admin@dif.gob.mx", pass: "admin2026" };
             const credencialesAdminTerritorio = { user: "admin.territorio@dif.gob.mx", pass: "territorio2026" };
-            const credencialesSuper           = { user: "angel.vidal", pass: "Angel123.." };
 
             if (deptoActivo === 'bienestar') {
-                // Tarjeta 1: Recepción Bienestar Social
-                if (usuario === credencialesBienestarRecep.user && pass === credencialesBienestarRecep.pass) {
-                    localStorage.setItem('usuarioActivo', JSON.stringify({ nombre: 'Operador Bienestar Social', departamento: 'BIENESTAR SOCIAL 2026', rol: 'bienestar' }));
+                // Tarjeta 1: Recepción Bienestar Social (Permite Karla Bernal o correo institucional)
+                if ((usuario === "karla.bernal" && pass === "Karlita123..") || 
+                    (usuario === "bienestar@dif.gob.mx" && pass === "bienestar2026")) {
+                    
+                    localStorage.setItem('usuarioActivo', JSON.stringify({ nombre: usuario === "karla.bernal" ? 'Karla Bernal (Bienestar Social)' : 'Operador Bienestar Social', departamento: 'BIENESTAR SOCIAL 2026', rol: 'bienestar' }));
                     window.location.href = 'recepcion/index.html';
                 } else { errorMsg.classList.remove('hidden'); }
 
             } else if (deptoActivo === 'territorio') {
-                // Tarjeta 2: Recepción Pueblo y Territorio
-                if (usuario === credencialesTerritorioRecep.user && pass === credencialesTerritorioRecep.pass) {
-                    localStorage.setItem('usuarioActivo', JSON.stringify({ nombre: 'Operador Pueblo y Territorio', departamento: 'PUEBLO Y TERRITORIO 2026', rol: 'territorio' }));
+                // Tarjeta 2: Recepción Pueblo y Territorio (Permite Damaris Domínguez o correo institucional)
+                if ((usuario === "damaris.dominguez" && pass === "Damaris123..") || 
+                    (usuario === "territorio@dif.gob.mx" && pass === "territorio2026")) {
+                    
+                    localStorage.setItem('usuarioActivo', JSON.stringify({ nombre: usuario === "damaris.dominguez" ? 'Damaris Domínguez (Pueblo y Territorio)' : 'Operador Pueblo y Territorio', departamento: 'PUEBLO Y TERRITORIO 2026', rol: 'territorio' }));
                     window.location.href = 'recepcion/index.html';
                 } else { errorMsg.classList.remove('hidden'); }
 
             } else if (deptoActivo === 'admin') {
-                // Tarjeta 3: Dirección General / Departamental (Administración unificada con filtro automático)
+                // Tarjeta 3: Dirección General / Departamental
                 if (usuario === credencialesAdminBienestar.user && pass === credencialesAdminBienestar.pass) {
                     localStorage.setItem('usuarioActivo', JSON.stringify({ nombre: 'Dirección de Bienestar Social', departamento: 'BIENESTAR SOCIAL 2026', rol: 'dir_bienestar' }));
                     window.location.href = 'administracion/index.html';
@@ -234,15 +236,13 @@
                 } else { errorMsg.classList.remove('hidden'); }
 
             } else if (deptoActivo === 'super') {
-                // Tarjeta 4: Super Usuario (Ángel Vidal - Acceso total y combinado)
+                // Tarjeta 4: Super Usuario (Ángel Vidal)
                 if (usuario === credencialesSuper.user && pass === credencialesSuper.pass) {
                     localStorage.setItem('usuarioActivo', JSON.stringify({ nombre: 'Ángel Vidal (Super Usuario)', departamento: 'GLOBAL', rol: 'super' }));
                     window.location.href = 'importar/index.html';
                 } else { errorMsg.classList.remove('hidden'); }
             }
         }
-
-
     </script>
 </body>
 </html>
